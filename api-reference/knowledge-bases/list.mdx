@@ -1,0 +1,185 @@
+---
+title: "Knowledge Bases — List and Search Document Collections"
+sidebarTitle: "Knowledge Bases"
+description: "List your Profound knowledge bases and search them by query string. Knowledge bases power AI agent workflows with your custom document collections."
+---
+
+A Profound Knowledge Base is a managed collection of documents that your AI agents can query at runtime. Knowledge bases let you ground agent workflows in proprietary content — product documentation, internal FAQs, brand guidelines, or any corpus you upload. Use the list endpoint to retrieve all knowledge bases in your organization, and the search endpoint to run semantic queries against a specific collection.
+
+## List Knowledge Bases
+
+Retrieve all knowledge bases available to your organization.
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/knowledge-bases" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const knowledgeBases = await client.knowledgeBases.list({});
+
+console.log(knowledgeBases);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+knowledge_bases = client.knowledge_bases.list()
+
+print(knowledge_bases)
+```
+
+</CodeGroup>
+
+## Search a Knowledge Base
+
+Run a semantic search query against a specific knowledge base and retrieve the most relevant document chunks.
+
+### Parameters
+
+<ParamField path="knowledgeBaseID" type="string" required>
+  The unique identifier of the knowledge base to search.
+</ParamField>
+
+<ParamField body="query" type="string" required>
+  The natural-language search query to run against the knowledge base.
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  Maximum number of document chunks to return. Defaults to `10`.
+</ParamField>
+
+<ParamField body="metadata_filter" type="object">
+  Key-value pairs to filter documents by their metadata before running the semantic search.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/knowledge-bases/kb_abc123/search" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "query": "What are our return policy guidelines?",
+    "top_k": 5
+  }'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const results = await client.knowledgeBases.search("kb_abc123", {
+  query: "What are our return policy guidelines?",
+  top_k: 5,
+});
+
+console.log(results);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+results = client.knowledge_bases.search(
+    "kb_abc123",
+    query="What are our return policy guidelines?",
+    top_k=5,
+)
+
+print(results)
+```
+
+</CodeGroup>
+
+<Tip>
+  Use `metadata_filter` to scope searches to a specific product line or team's documents when your knowledge base contains content from multiple sources.
+</Tip>
+
+## Response Fields
+
+### List Response
+
+<ResponseField name="data" type="array">
+  List of knowledge base objects.
+
+  <Expandable title="data[]">
+    <ResponseField name="id" type="string">
+      Unique identifier for the knowledge base.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Display name of the knowledge base.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      Optional description of the knowledge base contents.
+    </ResponseField>
+
+    <ResponseField name="document_count" type="integer">
+      Total number of documents currently indexed in this knowledge base.
+    </ResponseField>
+
+    <ResponseField name="folder_count" type="integer">
+      Number of folders in this knowledge base.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the knowledge base was created.
+    </ResponseField>
+
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last modification.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Search Response
+
+<ResponseField name="results" type="array">
+  Ranked list of document chunks matching the search query.
+
+  <Expandable title="results[]">
+    <ResponseField name="document_id" type="string">
+      The ID of the source document this chunk came from.
+    </ResponseField>
+
+    <ResponseField name="filename" type="string">
+      The filename of the source document.
+    </ResponseField>
+
+    <ResponseField name="chunk_text" type="string">
+      The text content of this document chunk.
+    </ResponseField>
+
+    <ResponseField name="score" type="number">
+      Semantic similarity score between the query and this chunk. Higher is more relevant.
+    </ResponseField>
+
+    <ResponseField name="folder_id" type="string">
+      The folder the source document belongs to, if any.
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Custom metadata attached to the source document.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

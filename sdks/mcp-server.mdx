@@ -1,0 +1,67 @@
+---
+title: "Profound MCP Server: Connect AI Assistants to Your Data"
+sidebarTitle: "MCP Server"
+description: "The Profound MCP server lets AI coding assistants like Cursor and VS Code Copilot explore endpoints, execute requests, and generate integration code."
+---
+
+The Profound MCP server implements the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), a standard that lets AI coding assistants connect directly to external services. Once configured, tools like Cursor and VS Code Copilot can browse Profound API endpoints, execute test requests with your real credentials, and help you write integration code — all without leaving your editor.
+
+## Adding to Cursor
+
+Cursor supports one-click MCP server installation. Click the link below to add the Profound MCP server to your Cursor workspace:
+
+[Add Profound MCP to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=profound&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBwcm9mb3VuZGFpL21jcCJdLCJlbnYiOnsiUFJPRk9VTkRfQUNDRVNTX1RPS0VOIjoiTXkgQWNjZXNzIFRva2VuIiwiUFJPRk9VTkRfQVBJX0tFWSI6Ik15IEFQSSBLZXKIFX0=)
+
+After Cursor installs the server, open your Cursor MCP settings and replace the placeholder values with your actual credentials:
+
+- `PROFOUND_ACCESS_TOKEN` — your Profound access token
+- `PROFOUND_API_KEY` — your Profound API key
+
+<Warning>
+  Never commit your API key or access token to version control. Store credentials in your local MCP configuration file, which should be excluded from git via `.gitignore`.
+</Warning>
+
+## Adding to VS Code
+
+VS Code with GitHub Copilot supports MCP servers through the Copilot extension. Install or open the Copilot extension using the link below, then add the Profound MCP server to your VS Code MCP configuration (see [Manual Configuration](#manual-configuration) below for the exact JSON block to use).
+
+[Open GitHub Copilot in VS Code](vscode:extension/GitHub.copilot)
+
+## Manual Configuration
+
+If you prefer to configure the MCP server by hand — or if you use a different editor that supports MCP — add the following block to your MCP configuration file:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "@profoundai/mcp"],
+  "env": {
+    "PROFOUND_ACCESS_TOKEN": "My Access Token",
+    "PROFOUND_API_KEY": "My API Key"
+  }
+}
+```
+
+Replace `"My Access Token"` and `"My API Key"` with your actual credentials. The `npx -y` flag ensures the latest version of `@profoundai/mcp` is always used without a manual install step.
+
+## Environment Variables
+
+The MCP server reads two environment variables:
+
+| Variable | Required | Description |
+|---|---|---|
+| `PROFOUND_API_KEY` | Required | Authenticates all standard API requests |
+| `PROFOUND_ACCESS_TOKEN` | Required for certain endpoints | Used for endpoints that require elevated access |
+
+Both variables must be present in the `env` block of your MCP configuration for full functionality.
+
+## What the MCP Server Enables
+
+Once connected, your AI assistant gains the ability to work with the Profound API interactively inside your editor:
+
+- **Explore endpoints** — Browse available API resources (reports, organizations, categories) and inspect their request parameters and response shapes.
+- **Make live test requests** — Execute real API calls with your credentials and see actual data returned, making it easy to prototype integrations.
+- **Get SDK guidance** — Ask your assistant to generate TypeScript or Python code using the Profound SDK, grounded in accurate, up-to-date API knowledge.
+- **Debug responses** — Paste error messages or unexpected results and let your assistant suggest fixes with full context of the API schema.
+
+For full details on available API resources, see the [API Reference](/api-reference).

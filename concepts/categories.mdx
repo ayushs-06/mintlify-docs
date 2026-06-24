@@ -1,0 +1,217 @@
+---
+title: "Categories: Organize AI Tracking by Topic"
+sidebarTitle: "Categories"
+description: "Categories let you organize Profound tracking by product line, topic, or competitive segment—each with its own set of prompts, personas, and AI insights."
+---
+
+A **category** is how you organize AI tracking within your organization. Each category represents a distinct topic area, product line, or competitive segment that you want to monitor—for example, "CRM Software," "Enterprise Security," or "SMB Payroll Solutions." Every prompt you run, every AI answer you capture, and every insight you generate lives inside a category.
+
+## How Categories Relate to Organizations
+
+Your organization can contain as many categories as your tracking needs require. Think of an organization as your brand and categories as the individual lenses through which you study AI visibility.
+
+```
+Organization (Your Brand)
+├── Category: CRM Software
+│   ├── Prompts
+│   ├── Tags & Topics
+│   └── Personas
+├── Category: Enterprise Security
+│   ├── Prompts
+│   ├── Tags & Topics
+│   └── Personas
+└── Category: SMB Payroll
+    ├── Prompts
+    ├── Tags & Topics
+    └── Personas
+```
+
+<Note>
+  Categories are independent of each other. A prompt in your "CRM Software"
+  category has no effect on results in your "Enterprise Security" category—
+  giving you clean, comparable data per segment.
+</Note>
+
+## Category Fields
+
+<ResponseField name="categoryId" type="string" required>
+  Unique identifier for the category.
+</ResponseField>
+
+<ResponseField name="organizationId" type="string" required>
+  The ID of the parent organization this category belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Human-readable name for the category (e.g., `CRM Software`, `Enterprise Security`).
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  An optional description explaining what this category tracks and why.
+</ResponseField>
+
+<ResponseField name="promptCount" type="number">
+  The total number of prompts currently assigned to this category.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the category was created.
+</ResponseField>
+
+## Prompts Within a Category
+
+Prompts are the questions Profound sends to AI assistants on your behalf—and every prompt belongs to exactly one category. Grouping prompts into a category gives you aggregated visibility metrics for that topic: how often your brand appears, which assets get cited, and what sentiment AI models express when discussing your segment.
+
+See [Prompts & Answers](/concepts/prompts-and-answers) for a full breakdown of prompt types and the answer data model.
+
+<Tip>
+  Keep prompts within a category tightly scoped to the same topic or buying
+  journey stage. Mixing broad informational queries with narrow transactional
+  ones in the same category makes aggregate metrics harder to interpret.
+</Tip>
+
+### Prompt Fields (Summary)
+
+<ResponseField name="promptId" type="string" required>
+  Unique identifier for the prompt.
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  The question or query sent to AI models (e.g., `"What is the best CRM for small businesses?"`).
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The intent type of the prompt: `informational`, `transactional`, `navigational`, or `comparison`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current lifecycle state: `draft`, `active`, or `archived`.
+</ResponseField>
+
+## Tags
+
+Tags are free-form labels you attach to prompts within a category. Use tags to create ad-hoc groupings that cut across topics—for example, tagging prompts with competitor names, campaign themes, or funnel stages so you can filter results later.
+
+<ResponseField name="tagId" type="string" required>
+  Unique identifier for the tag.
+</ResponseField>
+
+<ResponseField name="label" type="string" required>
+  The display text of the tag (e.g., `competitor-salesforce`, `top-of-funnel`).
+</ResponseField>
+
+<ResponseField name="promptCount" type="number">
+  Number of prompts in this category that carry this tag.
+</ResponseField>
+
+## Topics
+
+Topics are structured thematic groupings within a category, more formal than tags. While tags are flexible and user-defined, topics reflect the underlying subject matter of your prompts—for instance, "Pricing," "Integrations," or "Security & Compliance." Profound uses topics to surface thematic patterns in AI answers.
+
+<ResponseField name="topicId" type="string" required>
+  Unique identifier for the topic.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Name of the topic (e.g., `Pricing`, `Integrations`, `Security & Compliance`).
+</ResponseField>
+
+<ResponseField name="promptCount" type="number">
+  Number of prompts in this category associated with this topic.
+</ResponseField>
+
+## Category-Level Personas
+
+Every category can have its own set of personas—buyer profiles that determine the simulated audience perspective for prompts in that category. Category personas can be a subset of your organization-wide personas, or entirely distinct profiles scoped to the buying audience most relevant to that segment.
+
+<Note>
+  If a category has no personas assigned, Profound falls back to the
+  organization-level personas. Assigning category-specific personas overrides
+  that default for all prompts in the category.
+</Note>
+
+See [Personas](/concepts/personas) for full field definitions and configuration guidance.
+
+## Assets at the Category Level
+
+You can also scope asset tracking to a specific category. Category assets are the URLs most relevant to that topic—typically product pages, solution briefs, or competitor comparison pages—so you can measure citation rates specifically within that segment's prompt set.
+
+<ResponseField name="assetId" type="string" required>
+  Unique identifier for the asset.
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  The full URL of the tracked page.
+</ResponseField>
+
+<ResponseField name="citationCount" type="number">
+  Number of times this asset was cited in answers to prompts in this category.
+</ResponseField>
+
+## Fetching Category Data
+
+Use the Profound TypeScript SDK to list categories and retrieve their details programmatically.
+
+<CodeGroup>
+
+```typescript List Categories
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const categories = await client.organizations.categories.list();
+
+for (const category of categories) {
+  console.log(`${category.name} — ${category.promptCount} prompts`);
+}
+```
+
+```typescript Fetch a Specific Category
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+// Retrieve all categories and filter by name
+const categories = await client.organizations.categories.list();
+const crm = categories.find((c) => c.name === 'CRM Software');
+
+if (crm) {
+  console.log(`Category ID: ${crm.categoryId}`);
+  console.log(`Prompts: ${crm.promptCount}`);
+  console.log(`Created: ${crm.createdAt}`);
+}
+```
+
+```typescript List Prompt Answers for a Category
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+// Retrieve answer data for prompts in a category via the reports API
+const answers = await client.prompts.answers({
+  promptId: 'pmt_def456',
+  limit: 100,
+});
+
+for (const answer of answers) {
+  console.log(`[${answer.modelId}] Visibility: ${answer.visibilityScore}`);
+}
+```
+
+</CodeGroup>
+
+## What's Next
+
+Now that you understand how categories structure your tracking, explore the components that power them.
+
+<CardGroup cols={2}>
+  <Card title="Prompts & Answers" icon="message-circle" href="/concepts/prompts-and-answers">
+    Understand how prompts are written, run, and analyzed across AI models.
+  </Card>
+  <Card title="Personas" icon="users" href="/concepts/personas">
+    Configure the buyer profiles that bring your prompt sets to life.
+  </Card>
+  <Card title="Organizations" icon="building" href="/concepts/organizations">
+    Review how categories fit into the broader organization data model.
+  </Card>
+</CardGroup>

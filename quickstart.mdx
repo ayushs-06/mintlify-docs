@@ -1,47 +1,154 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Profound Quickstart: Your First API Call in Minutes"
+sidebarTitle: "Quickstart"
+description: "Install the Profound SDK, authenticate with your API key, and pull your first AI visibility report in under five minutes. No prior API experience needed."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+Profound gives you programmatic access to AI visibility data — how often your brand appears in ChatGPT, Perplexity, Google AI Overviews, and more. This quickstart walks you through installing an SDK, authenticating, and making your first API call in under five minutes.
 
 ## Prerequisites
 
-Before you begin, you must have:
+Before you begin, you need:
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+- A Profound account ([sign up at tryprofound.com](https://www.tryprofound.com))
+- An API key from your [dashboard](https://app.tryprofound.com) (Settings → API Keys)
+- Node.js 20+ (for TypeScript) or Python 3.9+ (for Python)
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Get your API key">
+    Log in to the [Profound dashboard](https://app.tryprofound.com), navigate to **Settings → API Keys**, and create a new key. Copy it and store it in your environment:
 
     ```bash
-    npm install your-package
+    export PROFOUND_API_KEY="your_api_key_here"
     ```
+
+    <Note>
+      Never hardcode your API key in source code. See [Authentication](/authentication) for best practices on credential management.
+    </Note>
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
-    ```
+  <Step title="Install the SDK">
+    Profound provides official SDKs for TypeScript/JavaScript and Python. Choose the package manager that matches your project.
+
+    <CodeGroup>
+
+      ```bash npm
+      npm install @profoundai/client
+      ```
+
+      ```bash yarn
+      yarn add @profoundai/client
+      ```
+
+      ```bash pnpm
+      pnpm add @profoundai/client
+      ```
+
+      ```bash pip
+      pip install profound
+      ```
+
+    </CodeGroup>
+
+    <Tip>
+      If you prefer to call the API directly without an SDK, every example in this guide also works with plain HTTP. Check the [API Reference](/api-reference/overview) for full endpoint documentation.
+    </Tip>
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
-    ```
+  <Step title="Make your first API call">
+    Fetch the list of tracked categories for your organization. Categories represent the product lines, topics, or competitive segments you're monitoring across AI assistants.
+
+    <CodeGroup>
+
+      ```ts TypeScript
+      import Profound from '@profoundai/client';
+
+      const client = new Profound({
+        apiKey: process.env['PROFOUND_API_KEY'],
+      });
+
+      // List the categories tracked by your organization
+      const categories = await client.organizations.categories.list();
+      console.log(categories);
+      ```
+
+      ```python Python
+      import os
+      from profound import Profound
+
+      client = Profound(
+          api_key=os.environ.get("PROFOUND_API_KEY"),
+      )
+
+      # List the categories tracked by your organization
+      categories = client.organizations.categories.list()
+      print(categories)
+      ```
+
+    </CodeGroup>
+
+    If you see a `401 AuthenticationError`, double-check that `PROFOUND_API_KEY` is set correctly in your shell environment.
+  </Step>
+
+  <Step title="Pull a visibility report">
+    Now fetch a visibility report to see how often your brand is cited — and with what sentiment — across AI assistants for a given date range. Pass `start_date` and `end_date` in `YYYY-MM-DD` format.
+
+    <CodeGroup>
+
+      ```ts TypeScript
+      import Profound from '@profoundai/client';
+
+      const client = new Profound({
+        apiKey: process.env['PROFOUND_API_KEY'],
+      });
+
+      // Pull a visibility report
+      const visibility = await client.reports.visibility({
+        start_date: '2024-01-01',
+        end_date: '2024-01-31',
+      });
+      console.log(visibility);
+      ```
+
+      ```python Python
+      import os
+      from profound import Profound
+
+      client = Profound(
+          api_key=os.environ.get("PROFOUND_API_KEY"),
+      )
+
+      # Pull a visibility report
+      visibility = client.reports.visibility(
+          start_date="2024-01-01",
+          end_date="2024-01-31",
+      )
+      print(visibility)
+      ```
+
+    </CodeGroup>
+
+    The response includes citation counts, share-of-voice percentages, and sentiment scores broken down by AI assistant and category. Use these metrics to benchmark your brand's AI presence over time.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## What's next
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Now that you have data flowing, explore the core concepts behind Profound's metrics or browse the full API reference to see everything you can track.
+
+<CardGroup cols={2}>
+  <Card
+    title="Core Concepts"
+    icon="lightbulb"
+    href="/concepts/organizations"
+  >
+    Understand how Profound measures AI visibility, citation share, and brand sentiment across assistants.
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/overview"
+  >
+    Browse every endpoint, parameter, and response schema in the full Profound REST API reference.
+  </Card>
+</CardGroup>

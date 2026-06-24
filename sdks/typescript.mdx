@@ -1,0 +1,260 @@
+---
+title: "Profound TypeScript SDK — Official JavaScript Client"
+sidebarTitle: "TypeScript SDK"
+description: "Install and use the official Profound TypeScript SDK to access visibility, citations, sentiment, and all Profound API resources from Node.js or browsers."
+---
+
+The official Profound TypeScript SDK (`@profoundai/client`) gives you fully typed access to every Profound API resource — visibility reports, citation tracking, sentiment analysis, organization data, and more. The SDK is generated with [Stainless](https://stainless.com) and works across Node.js, Deno, Bun, Cloudflare Workers, Vercel Edge, and modern browsers.
+
+## Installation
+
+<Steps>
+  <Step title="Install the package">
+    Choose your preferred package manager:
+
+    <CodeGroup>
+      ```bash npm
+      npm install @profoundai/client
+      ```
+
+      ```bash yarn
+      yarn add @profoundai/client
+      ```
+
+      ```bash pnpm
+      pnpm add @profoundai/client
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Set your API key">
+    Store your Profound API key as an environment variable so it never appears in your source code.
+
+    ```bash
+    export PROFOUND_API_KEY="your-api-key"
+    ```
+
+    <Warning>
+      Never hard-code your API key directly in source files or commit it to version control. Use environment variables or a secrets manager instead.
+    </Warning>
+  </Step>
+
+  <Step title="Initialize the client">
+    Import and instantiate the client. When `apiKey` is omitted, the SDK automatically reads from `PROFOUND_API_KEY` in your environment.
+
+    ```ts
+    import Profound from '@profoundai/client';
+
+    const client = new Profound({
+      apiKey: process.env['PROFOUND_API_KEY'],
+    });
+    ```
+  </Step>
+</Steps>
+
+## Basic Usage
+
+Once the client is initialized, you can call any Profound API resource. Every method returns a `Promise` that resolves to a fully typed response object.
+
+```ts
+import Profound from '@profoundai/client';
+
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+});
+
+// List your organizations
+const orgs = await client.organizations.list();
+
+// Pull a visibility report for a date range
+const visibility = await client.reports.visibility({
+  start_date: '2024-01-01',
+  end_date:   '2024-01-31',
+});
+
+// Pull citation and sentiment reports
+const citations  = await client.reports.citations({ start_date: '2024-01-01', end_date: '2024-01-31' });
+const sentiment  = await client.reports.sentiment({ start_date: '2024-01-01', end_date: '2024-01-31' });
+
+// Explore organization categories and assets
+const categories = await client.organizations.categories.list();
+const assets     = await client.organizations.listAssets();
+```
+
+## TypeScript Types
+
+Every request parameter and response field is fully typed. You can import the request and response types directly from the package:
+
+```ts
+import Profound from '@profoundai/client';
+import type { Organization, VisibilityReport } from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env['PROFOUND_API_KEY'] });
+
+const orgs: Awaited<ReturnType<typeof client.organizations.list>> = await client.organizations.list();
+
+// Or import named types for use in your own functions
+function processReport(report: VisibilityReport) {
+  console.log(report);
+}
+```
+
+Request parameter objects are also typed, so your editor will autocomplete field names and flag invalid values before you ever make a network call.
+
+## Error Handling
+
+The SDK raises typed error classes for every failure scenario. Catch `APIError` as a base class, or catch specific subclasses to handle individual HTTP status codes.
+
+| Error class | HTTP status | When it occurs |
+|---|---|---|
+| `BadRequestError` | 400 | Malformed request or invalid parameters |
+| `AuthenticationError` | 401 | Missing or invalid API key |
+| `PermissionDeniedError` | 403 | Your key lacks permission for this resource |
+| `NotFoundError` | 404 | The requested resource does not exist |
+| `UnprocessableEntityError` | 422 | Request is well-formed but semantically invalid |
+| `RateLimitError` | 429 | Too many requests — slow down and retry |
+| `InternalServerError` | 500+ | Profound-side error |
+| `APIConnectionError` | — | Network failure before a response was received |
+| `APIConnectionTimeoutError` | — | Request exceeded the configured timeout |
+
+```ts
+import Profound, {
+  APIError,
+  AuthenticationError,
+  RateLimitError,
+  NotFoundError,
+} from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env['PROFOUND_API_KEY'] });
+
+try {
+  const orgs = await client.organizations.list();
+} catch (err) {
+  if (err instanceof AuthenticationError) {
+    console.error('Check your PROFOUND_API_KEY — authentication failed.');
+  } else if (err instanceof RateLimitError) {
+    console.warn('Rate limit hit. Back off and retry.');
+  } else if (err instanceof NotFoundError) {
+    console.error('Resource not found.');
+  } else if (err instanceof APIError) {
+    // Catch-all for any other API error
+    console.error(`API error ${err.status}: ${err.message}`);
+  } else {
+    throw err; // Re-throw unexpected errors
+  }
+}
+```
+
+All `APIError` instances expose a `.status` (HTTP status code), `.message`, and `.headers` property for detailed diagnostics.
+
+## Retries
+
+The SDK automatically retries failed requests on network errors and `429`/`5xx` responses using exponential backoff. The default is **2 retries**. Adjust this globally on the client or per-request:
+
+```ts
+// Global: set a custom retry count for all requests
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+  maxRetries: 3,
+});
+
+// Per-request: override the global setting for a single call
+const orgs = await client.organizations.list({ maxRetries: 0 }); // disable retries
+```
+
+## Timeouts
+
+The default request timeout is **60 seconds**. Configure it globally or override it for individual requests:
+
+```ts
+// Global: shorten the timeout for all requests
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+  timeout: 20 * 1000, // 20 seconds in milliseconds
+});
+
+// Per-request: apply a specific timeout to a single call
+const visibility = await client.reports.visibility(
+  { start_date: '2024-01-01', end_date: '2024-01-31' },
+  { timeout: 5 * 1000 }, // 5 seconds
+);
+```
+
+When a request times out, the SDK throws an `APIConnectionTimeoutError`, which you can catch and handle separately from other errors.
+
+## Logging
+
+The SDK includes built-in logging to help you debug requests and responses. Set `logLevel` on the client to control verbosity:
+
+```ts
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+  logLevel: 'debug', // 'debug' | 'info' | 'warn' | 'error' | 'off'
+});
+```
+
+| Level | What gets logged |
+|---|---|
+| `debug` | Full request and response details, headers, and body |
+| `info` | Request URLs and response status codes |
+| `warn` | Retries, deprecation notices, and unusual conditions |
+| `error` | Only unrecoverable errors |
+| `off` | Nothing |
+
+You can also supply a **custom logger** — any object with `debug`, `info`, `warn`, and `error` methods works. Here's an example using [pino](https://getpino.io):
+
+```ts
+import Profound from '@profoundai/client';
+import pino from 'pino';
+
+const logger = pino({ level: 'debug' });
+
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+  logger: {
+    debug: (msg, ...args) => logger.debug(args, msg),
+    info:  (msg, ...args) => logger.info(args, msg),
+    warn:  (msg, ...args) => logger.warn(args, msg),
+    error: (msg, ...args) => logger.error(args, msg),
+  },
+});
+```
+
+## Accessing the Raw Response
+
+By default, SDK methods return the parsed response body. When you need access to HTTP headers, status codes, or the raw `Response` object, use `.asResponse()` or `.withResponse()`:
+
+```ts
+// .asResponse() — returns the raw fetch Response
+const rawResponse = await client.organizations.categories.list().asResponse();
+console.log(rawResponse.status);          // e.g. 200
+console.log(rawResponse.headers.get('x-request-id'));
+
+// .withResponse() — returns both the parsed data and the raw Response
+const { data, response } = await client.organizations.categories.list().withResponse();
+console.log(data);                        // parsed categories array
+console.log(response.headers.get('x-request-id'));
+```
+
+Use `.withResponse()` when you need both the structured data and diagnostic header information in the same call.
+
+## Supported Runtimes
+
+<Note>
+  The SDK targets **Node.js 20 or later**. Older Node.js versions are not officially supported.
+</Note>
+
+The SDK ships as standard ES modules with no platform-specific native dependencies, so it runs wherever the fetch API is available:
+
+| Runtime | Minimum version |
+|---|---|
+| Node.js | 20+ |
+| Deno | v1.28+ |
+| Bun | 1.0+ |
+| Cloudflare Workers | Current |
+| Vercel Edge Runtime | Current |
+| Web browsers | All modern browsers |
+
+## API Reference
+
+For a full list of endpoints, request parameters, and response shapes, see the [API Reference](/api-reference).

@@ -1,0 +1,185 @@
+---
+title: "Measure AI Sentiment Toward Your Brand with Profound"
+sidebarTitle: "Sentiment Reporting"
+description: "Profound sentiment reports show whether AI assistants frame your brand positively or negatively, so you can act before it affects buying decisions."
+---
+
+Your brand can appear in AI responses frequently—and still be doing damage. If AI assistants consistently describe your product as expensive, difficult to use, or inferior to a competitor, that narrative reaches users before you do. Profound sentiment reports surface exactly how AI models talk about your brand, so you can identify and address negative framing before it influences buying decisions.
+
+## What sentiment measures
+
+Profound analyzes the language AI assistants use when they mention your brand and assigns each response a sentiment score. Scores fall into three buckets:
+
+- **Positive** — the response frames your brand favorably (recommends it, highlights strengths, uses encouraging language)
+- **Neutral** — the response mentions your brand factually without positive or negative framing
+- **Negative** — the response frames your brand unfavorably (raises concerns, compares negatively to competitors, uses discouraging language)
+
+The overall sentiment score in a report is the weighted aggregate across all responses in the selected date range and filters.
+
+<Note>
+  Sentiment is measured on responses where your brand appears—not across all prompts. A high sentiment score with low visibility means AI models speak well of you when they mention you, but don't mention you often. Both dimensions matter.
+</Note>
+
+## Pull a sentiment report
+
+Use `client.reports.sentiment()` to fetch sentiment data for a given date range. The response includes overall sentiment scores and a breakdown by positive, neutral, and negative categories.
+
+<CodeGroup>
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.sentiment({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log("Overall sentiment score:", report.score);
+console.log("Positive responses:", report.positive_count);
+console.log("Neutral responses:", report.neutral_count);
+console.log("Negative responses:", report.negative_count);
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.sentiment(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print("Overall sentiment score:", report.score)
+print("Positive responses:", report.positive_count)
+print("Neutral responses:", report.neutral_count)
+print("Negative responses:", report.negative_count)
+```
+</CodeGroup>
+
+## Understand sentiment scores and drivers
+
+A sentiment score on its own tells you the direction—but the drivers tell you why. Look at which topics, categories, or bots are pulling sentiment in a negative direction to prioritize your response.
+
+<Steps>
+  <Step title="Check your baseline score">
+    Pull a broad sentiment report (90 days or more) to establish your baseline. This gives you a stable reference point before you start filtering.
+  </Step>
+  <Step title="Filter by category">
+    Run sentiment reports segmented by category—pricing, support, onboarding, integrations, and so on. A low score in one category often points to a specific content or messaging gap.
+  </Step>
+  <Step title="Filter by bot">
+    Compare sentiment across AI assistants. If one bot is consistently more negative than others, investigate which prompts are driving that and whether there's a specific narrative to correct.
+  </Step>
+  <Step title="Review the underlying responses">
+    Profound surfaces sample AI responses alongside sentiment data. Read the negatively scored responses closely—they reveal the exact language and framing AI models are using.
+  </Step>
+  <Step title="Take action">
+    Use the [content optimization guide](/guides/content-optimization) to improve the specific pages or topics where AI models are picking up negative signals.
+  </Step>
+</Steps>
+
+<Tip>
+  A sudden drop in sentiment score is a strong signal that something changed—either in your product, your public coverage, or the AI models' training data. Set up regular report pulls and alert on significant deltas.
+</Tip>
+
+## Filter sentiment reports
+
+Segment your sentiment data to isolate where problems are coming from. The same filters available on visibility and citation reports are supported here.
+
+| Filter | Description |
+|---|---|
+| `bot` | Scope to a specific AI assistant |
+| `category` | Narrow to a product or content category |
+| `region` | Filter by geographic region |
+| `persona` | Segment by simulated user persona |
+| `topic` | Focus on a topic cluster |
+| `model_id` | Target a specific model version |
+| `tag` | Filter by custom tag |
+
+<CodeGroup>
+```typescript TypeScript
+// Compare sentiment across two bots for the same period
+const [chatgpt, perplexity] = await Promise.all([
+  client.reports.sentiment({
+    start_date: "2025-01-01",
+    end_date: "2025-01-31",
+    bot: "chatgpt",
+  }),
+  client.reports.sentiment({
+    start_date: "2025-01-01",
+    end_date: "2025-01-31",
+    bot: "perplexity",
+  }),
+]);
+
+console.log("ChatGPT sentiment:", chatgpt.score);
+console.log("Perplexity sentiment:", perplexity.score);
+```
+
+```python Python
+import concurrent.futures
+
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    future_chatgpt = executor.submit(
+        client.reports.sentiment,
+        start_date="2025-01-01",
+        end_date="2025-01-31",
+        bot="chatgpt",
+    )
+    future_perplexity = executor.submit(
+        client.reports.sentiment,
+        start_date="2025-01-01",
+        end_date="2025-01-31",
+        bot="perplexity",
+    )
+    chatgpt = future_chatgpt.result()
+    perplexity = future_perplexity.result()
+
+print("ChatGPT sentiment:", chatgpt.score)
+print("Perplexity sentiment:", perplexity.score)
+```
+</CodeGroup>
+
+## Stream sentiment data
+
+For long date ranges or high-volume accounts, stream sentiment results to avoid waiting for the full dataset to load. `client.reports.streamSentiment()` accepts the same parameters as the standard `sentiment()` method.
+
+<CodeGroup>
+```typescript TypeScript
+const stream = await client.reports.streamSentiment({
+  start_date: "2025-01-01",
+  end_date: "2025-03-31",
+  category: "pricing",
+});
+
+for await (const chunk of stream) {
+  console.log("Received chunk:", chunk);
+}
+```
+
+```python Python
+stream = client.reports.stream_sentiment(
+    start_date="2025-01-01",
+    end_date="2025-03-31",
+    category="pricing",
+)
+
+for chunk in stream:
+    print("Received chunk:", chunk)
+```
+</CodeGroup>
+
+<Warning>
+  Don't make product or messaging decisions based on a single day's sentiment data. Short windows can skew due to a single viral response or prompt anomaly. Use at least 14 days for a reliable read.
+</Warning>
+
+## Next steps
+
+Sentiment tells you how AI models describe your brand. The next step is doing something about it:
+
+- [Review content optimization suggestions](/guides/content-optimization) for pages associated with negative sentiment categories
+- [Track visibility alongside sentiment](/guides/visibility-tracking) to build a complete picture of your AI presence
+- [Check which URLs are cited in negative contexts](/guides/citation-analysis) to identify the specific pages contributing to poor sentiment

@@ -1,0 +1,532 @@
+---
+title: "Shopping Reports — AI Product and Merchant Visibility"
+sidebarTitle: "Shopping"
+description: "Access shopping visibility reports tracking product and merchant presence in AI results, including merchant share, distribution, and trigger rates."
+---
+
+The Shopping Reports suite measures how your products and merchants appear in AI-powered shopping experiences. Whether you want to track overall shopping visibility, analyze which merchants surface most often, or understand how frequently your products trigger AI shopping modules, Profound gives you a dedicated endpoint for each view.
+
+All shopping report methods live under `client.reports.shopping`.
+
+## Available Methods
+
+| Method | Description |
+|---|---|
+| `visibility` | Overall shopping visibility score over time |
+| `itemVisibility` | Visibility broken down by individual product item |
+| `merchantShare` | Share of AI shopping results attributed to each merchant |
+| `merchantDistribution` | Distribution of merchants across AI shopping responses |
+| `merchantByItems` | Which merchants appear alongside specific items |
+| `allItemsWithMerchants` | All tracked items paired with their appearing merchants |
+| `productMerchantUrls` | URLs used by merchants to represent specific products |
+| `triggerRate` | Rate at which prompts trigger AI shopping modules |
+| `merchantVisibilityByBrand` | Merchant visibility segmented by brand |
+| `executions` | Raw shopping report execution log |
+
+## Common Parameters
+
+All shopping report methods accept a shared set of filter parameters:
+
+<ParamField query="start_date" type="string" required>
+  The start of the reporting window in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  The end of the reporting window in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter to a specific AI bot or shopping assistant.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Restrict results to a specific geographic region.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Scope results to a single product category.
+</ParamField>
+
+<ParamField query="brand_id" type="string">
+  Filter by brand, used specifically in `merchantVisibilityByBrand`.
+</ParamField>
+
+<ParamField query="product_id" type="string">
+  Filter to a specific product, used in item-level and merchant-by-items reports.
+</ParamField>
+
+<ParamField query="merchant_id" type="string">
+  Filter to a specific merchant across all applicable methods.
+</ParamField>
+
+<Note>
+  Each method accepts the same base filter parameters. Check the Profound dashboard for the full list of available `product_id`, `merchant_id`, and `brand_id` values for your organization.
+</Note>
+
+## Code Examples
+
+### Visibility
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/visibility?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.visibility({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.visibility(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Merchant Share
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/merchant-share?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.merchantShare({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  region_id: "us",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.merchant_share(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    region_id="us",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Trigger Rate
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/trigger-rate?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.triggerRate({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.trigger_rate(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Item Visibility
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/item-visibility?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.itemVisibility({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  product_id: "prod_abc123",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.item_visibility(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    product_id="prod_abc123",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Merchant Distribution
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/merchant-distribution?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.merchantDistribution({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  region_id: "us",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.merchant_distribution(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    region_id="us",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Merchant by Items
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/merchant-by-items?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.merchantByItems({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  merchant_id: "merch_xyz789",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.merchant_by_items(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    merchant_id="merch_xyz789",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### All Items with Merchants
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/all-items-with-merchants?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.allItemsWithMerchants({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.all_items_with_merchants(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Product Merchant URLs
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/product-merchant-urls?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.productMerchantUrls({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  product_id: "prod_abc123",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.product_merchant_urls(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    product_id="prod_abc123",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Merchant Visibility by Brand
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/merchant-visibility-by-brand?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.merchantVisibilityByBrand({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  brand_id: "brand_001",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.merchant_visibility_by_brand(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    brand_id="brand_001",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Executions
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/shopping/executions?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.shopping.executions({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.shopping.executions(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+## Response Fields
+
+Response shapes vary by method, but all shopping reports share these common top-level fields:
+
+<ResponseField name="data" type="array">
+  Array of result records. The structure of each record depends on the method called.
+
+  <Expandable title="data[] — common fields">
+    <ResponseField name="date" type="string">
+      The date of the record in `YYYY-MM-DD` format.
+    </ResponseField>
+
+    <ResponseField name="visibility_score" type="number">
+      Visibility score for this record. Present on `visibility`, `itemVisibility`, and `merchantVisibilityByBrand`.
+    </ResponseField>
+
+    <ResponseField name="merchant_id" type="string">
+      Identifier of the merchant. Present on merchant-focused methods.
+    </ResponseField>
+
+    <ResponseField name="merchant_name" type="string">
+      Display name of the merchant.
+    </ResponseField>
+
+    <ResponseField name="product_id" type="string">
+      Identifier of the product or item. Present on item-level methods.
+    </ResponseField>
+
+    <ResponseField name="product_name" type="string">
+      Display name of the product.
+    </ResponseField>
+
+    <ResponseField name="share" type="number">
+      Merchant's share of AI shopping results as a decimal. Present on `merchantShare`.
+    </ResponseField>
+
+    <ResponseField name="trigger_rate" type="number">
+      Rate at which prompts trigger an AI shopping module, as a decimal. Present on `triggerRate`.
+    </ResponseField>
+
+    <ResponseField name="url" type="string">
+      The merchant URL for a product listing. Present on `productMerchantUrls`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Metadata about the query.
+
+  <Expandable title="meta">
+    <ResponseField name="start_date" type="string">
+      The start date used for this report.
+    </ResponseField>
+
+    <ResponseField name="end_date" type="string">
+      The end date used for this report.
+    </ResponseField>
+
+    <ResponseField name="total_records" type="integer">
+      Total number of records returned.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

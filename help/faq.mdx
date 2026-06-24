@@ -1,0 +1,112 @@
+---
+title: "Profound Platform FAQ: Common Questions and Answers"
+sidebarTitle: "FAQ"
+description: "Answers to common questions about the Profound API, SDKs, authentication, rate limits, data freshness, and supported AI models and platforms."
+---
+
+Can't find what you're looking for in the rest of the docs? These are the questions the Profound team hears most often. If your question isn't covered here, reach out to [support@tryprofound.com](mailto:support@tryprofound.com) and we'll get back to you quickly.
+
+<AccordionGroup>
+
+  <Accordion title="What AI models does Profound track?">
+    Profound currently tracks brand and citation visibility across the most widely used AI-powered search and chat surfaces, including **ChatGPT**, **Perplexity**, **Bing Copilot**, and **Google AI Overviews**. Additional models and surfaces are configured per organization, so the exact set of sources you see in your dashboard depends on which ones are enabled for your account. If you want to add or remove a source, contact your account manager or email [support@tryprofound.com](mailto:support@tryprofound.com).
+  </Accordion>
+
+  <Accordion title="How often is data refreshed?">
+    Profound continuously runs prompts against the tracked AI surfaces — there is no single nightly batch job. The data you see in your reports and via the API reflects the most recent results from those ongoing bot crawls. Refresh cadence can vary by source and by the volume of prompts configured for your organization. If you need a specific freshness SLA for your use case, reach out to the team to discuss options.
+  </Accordion>
+
+  <Accordion title="Can I add custom prompts?">
+    Yes. You can add your own prompts to any category using the `createPrompts` method on the categories API. This lets you monitor how AI models respond to the exact questions your customers are asking.
+
+    ```ts
+    // TypeScript
+    await client.organizations.categories.createPrompts({
+      organizationId: "org_123",
+      categoryId: "cat_456",
+      prompts: [
+        { text: "What is the best project management tool for remote teams?" },
+      ],
+    });
+    ```
+
+    ```python
+    # Python
+    client.organizations.categories.create_prompts(
+        organization_id="org_123",
+        category_id="cat_456",
+        prompts=[{"text": "What is the best project management tool for remote teams?"}],
+    )
+    ```
+
+    Custom prompts are processed on the same continuous cadence as Profound's built-in prompts.
+  </Accordion>
+
+  <Accordion title="What is the difference between an API key and an access token?">
+    An **API key** is a long-lived credential tied to your Profound account. You use it for the vast majority of API calls — pass it as the `apiKey` option in the SDK client constructor or as the `Authorization: Bearer <key>` header in raw HTTP requests.
+
+    An **access token** is a short-lived credential issued through an OAuth-style authorization flow. Access tokens are intended for integrations where you are acting on behalf of another user or organization rather than your own account. If you're building a server-to-server integration, you almost certainly want an API key. If you're building a product that lets your customers connect their Profound accounts to your app, you'll use the access token flow.
+
+    You can manage your API keys in the dashboard under **Settings → API Keys** at [app.tryprofound.com](https://app.tryprofound.com).
+  </Accordion>
+
+  <Accordion title="How do I track multiple brands or domains?">
+    You have two options depending on your use case:
+
+    **Multiple organizations** — Create a separate organization in Profound for each brand. This gives each brand its own isolated set of categories, prompts, and reports. It's the right choice when brands are fully independent business units.
+
+    **Multiple domains within one organization** — Add several domains to a single organization. This is useful when you want to compare visibility across domains side by side within the same reporting context, such as tracking a primary domain alongside a regional subdomain or a recently acquired property.
+
+    Both approaches are fully supported via the API and the dashboard. Use whichever model matches how your team thinks about these brands.
+  </Accordion>
+
+  <Accordion title="Does Profound support streaming responses?">
+    The Profound API returns complete, paginated JSON responses rather than streaming events. Use the reports endpoints — `reports.visibility()`, `reports.citations()`, and `reports.sentiment()` — to retrieve fully resolved data for a given date range. For large-scale or near-real-time data needs, consider polling on a scheduled interval or contact [support@tryprofound.com](mailto:support@tryprofound.com) to discuss options for your use case.
+  </Accordion>
+
+  <Accordion title="What languages and platforms does Profound support?">
+    Profound provides first-party SDKs for **TypeScript/JavaScript** (`@profoundai/client`, works in Node.js and edge runtimes) and **Python** (`profound`, compatible with Python 3.9+). Both SDKs are kept in sync with the latest API capabilities.
+
+    If you're working in another language — Go, Ruby, PHP, Java, or anything else — you can call the Profound REST API directly using standard HTTP libraries. The API accepts JSON request bodies and returns JSON responses, so any HTTP client will work. Refer to the [API Reference](/api-reference) for full endpoint documentation.
+  </Accordion>
+
+  <Accordion title="How do I get my API key?">
+    Your API keys live in the Profound dashboard. To find them:
+
+    1. Sign in at [app.tryprofound.com](https://app.tryprofound.com).
+    2. Click your account name in the top-right corner and select **Settings**.
+    3. Navigate to the **API Keys** tab.
+    4. Click **Create API Key**, give it a descriptive name, and copy the key immediately — it is only shown once.
+
+    Store your API key in an environment variable (e.g., `PROFOUND_API_KEY`) rather than hard-coding it in your source files. Both SDKs read this variable automatically if you don't pass a key explicitly.
+
+    ```ts
+    // TypeScript — key is read from PROFOUND_API_KEY automatically
+    const client = new Profound();
+    ```
+
+    ```python
+    # Python — key is read from PROFOUND_API_KEY automatically
+    client = Profound()
+    ```
+  </Accordion>
+
+  <Accordion title="Are there rate limits on the API?">
+    Yes. When you exceed the allowed request rate, the API returns an HTTP **429 Too Many Requests** response. Both SDKs automatically retry 429 responses up to **2 times** using exponential backoff, so brief spikes are handled for you without any extra code.
+
+    If you need to handle rate limits yourself, inspect the `X-RateLimit-Remaining` header on successful responses to see how much headroom you have, and the `Retry-After` header on 429 responses to know how long to wait before retrying.
+
+    For a full guide on rate limit headers, configuring retries, and best practices for high-volume integrations, see the [Rate Limits](/help/rate-limits) page.
+  </Accordion>
+
+  <Accordion title="How do I report a bug or request a feature?">
+    There are two ways to get in touch:
+
+    **Email support** — Send a message to [support@tryprofound.com](mailto:support@tryprofound.com). Include a description of the issue, the SDK version you're using, a minimal code snippet that reproduces the problem, and the `request-id` value from the response headers if you have a failing API call. The more detail you provide, the faster the team can help.
+
+    **GitHub issues** — If you're using one of the open-source SDKs, you can open an issue directly on the SDK's GitHub repository. This is a good choice for reproducible bugs or specific feature requests where you'd like the community to weigh in.
+
+    For urgent production issues, email is the fastest path to a response.
+  </Accordion>
+
+</AccordionGroup>

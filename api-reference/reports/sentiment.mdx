@@ -1,0 +1,177 @@
+---
+title: "Sentiment Report — AI Tone Analysis for Your Brand"
+sidebarTitle: "Sentiment"
+description: "Fetch sentiment reports measuring whether AI assistants describe your brand positively, neutrally, or negatively across models, regions, and prompts."
+---
+
+The Sentiment report measures the emotional tone of AI-generated responses that mention your brand. Profound analyzes each AI answer and classifies it as positive, neutral, or negative, then aggregates those scores across your prompts, categories, bots, regions, and personas. Use sentiment data to identify which AI assistants or market regions portray your brand unfavorably — before it influences customer decisions.
+
+## Request
+
+<ParamField query="start_date" type="string" required>
+  Start of the reporting period in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  End of the reporting period in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter by a specific AI assistant (e.g., `chatgpt`, `perplexity`, `bing`).
+</ParamField>
+
+<ParamField query="model_id" type="string">
+  Filter by a specific model ID. Use IDs from the [Models](/api-reference/organizations/models) endpoint.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Filter by geographic region. Use IDs from the [Regions](/api-reference/organizations/regions) endpoint.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Filter to a specific tracked category.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Filter results for prompts run from a specific buyer persona.
+</ParamField>
+
+<ParamField query="tag_id" type="string">
+  Filter to prompts tagged with a specific tag.
+</ParamField>
+
+<ParamField query="topic_id" type="string">
+  Filter to prompts associated with a specific topic cluster.
+</ParamField>
+
+<ParamField query="prompt_type" type="string">
+  Filter by prompt intent type (e.g., `informational`, `transactional`).
+</ParamField>
+
+## Code examples
+
+<CodeGroup>
+
+```bash curl
+curl "https://api.tryprofound.com/v1/reports/sentiment?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```ts TypeScript
+import Profound from '@profoundai/client';
+
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+});
+
+const sentiment = await client.reports.sentiment({
+  start_date: '2024-01-01',
+  end_date: '2024-01-31',
+  // bot_name: 'perplexity',
+  // region_id: 'region_us',
+});
+console.log(sentiment);
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(
+    api_key=os.environ.get("PROFOUND_API_KEY"),
+)
+
+sentiment = client.reports.sentiment(
+    start_date="2024-01-01",
+    end_date="2024-01-31",
+    # bot_name="perplexity",
+    # region_id="region_us",
+)
+print(sentiment)
+```
+
+</CodeGroup>
+
+## Streaming sentiment
+
+For large date ranges, use `streamSentiment` to receive results incrementally:
+
+<CodeGroup>
+
+```ts TypeScript
+const stream = await client.reports.streamSentiment({
+  start_date: '2024-01-01',
+  end_date: '2024-06-30',
+});
+
+for await (const chunk of stream) {
+  console.log(chunk);
+}
+```
+
+```python Python
+stream = client.reports.stream_sentiment(
+    start_date="2024-01-01",
+    end_date="2024-06-30",
+)
+
+for chunk in stream:
+    print(chunk)
+```
+
+</CodeGroup>
+
+## Response
+
+<ResponseField name="results" type="array">
+  List of sentiment result objects, one per dimension (bot, category, region, etc.) depending on your filter combination.
+
+  <Expandable title="result fields">
+    <ResponseField name="dimension" type="string">
+      The breakdown dimension for this result (e.g., `bot_name`, `category_id`, `region_id`).
+    </ResponseField>
+    <ResponseField name="dimension_value" type="string">
+      The value of the dimension (e.g., `chatgpt`, `cat_abc123`, `region_us`).
+    </ResponseField>
+    <ResponseField name="positive_score" type="number">
+      Fraction of responses classified as positive (0–1).
+    </ResponseField>
+    <ResponseField name="neutral_score" type="number">
+      Fraction of responses classified as neutral (0–1).
+    </ResponseField>
+    <ResponseField name="negative_score" type="number">
+      Fraction of responses classified as negative (0–1).
+    </ResponseField>
+    <ResponseField name="response_count" type="integer">
+      Total number of AI responses analyzed for this dimension.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="overall_sentiment" type="object">
+  Aggregate sentiment across all filtered results.
+
+  <Expandable title="overall sentiment fields">
+    <ResponseField name="positive_score" type="number">
+      Overall positive fraction (0–1).
+    </ResponseField>
+    <ResponseField name="neutral_score" type="number">
+      Overall neutral fraction (0–1).
+    </ResponseField>
+    <ResponseField name="negative_score" type="number">
+      Overall negative fraction (0–1).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for the next page of results. `null` when no more results exist.
+</ResponseField>
+
+<Warning>
+  Avoid drawing conclusions from a single day's sentiment data. AI model responses can vary significantly day-to-day. Use at least a 7-day window for meaningful trend analysis.
+</Warning>
+
+<Tip>
+  Compare sentiment across bots by running two requests with different `bot_name` filters. A large gap between assistants may indicate one model is working from outdated or biased training data about your brand.
+</Tip>

@@ -1,0 +1,165 @@
+---
+title: "Profound REST API Reference — Overview and Conventions"
+sidebarTitle: "Overview"
+description: "Complete reference for the Profound REST API covering base URL, authentication, request format, pagination, versioning, error codes, and rate limits."
+---
+
+The Profound REST API gives you full programmatic access to every metric the platform tracks — visibility scores, AI citations, sentiment signals, prompt answers, and more. All requests go to a single versioned base URL, authenticate with a Bearer token, and return JSON.
+
+## Base URL
+
+Every API request targets the following base URL:
+
+```
+https://api.tryprofound.com/v1
+```
+
+Append the endpoint path to this base. For example, the List Organizations endpoint is:
+
+```
+https://api.tryprofound.com/v1/organizations
+```
+
+## Authentication
+
+Profound authenticates requests using a Bearer token. Include your API key in the `Authorization` header on every request:
+
+```
+Authorization: Bearer <PROFOUND_API_KEY>
+```
+
+You can generate and revoke API keys from **Settings → API Keys** in the [Profound dashboard](https://app.tryprofound.com). Keep your key secret — treat it like a password. If a key is compromised, revoke it immediately and issue a new one.
+
+<CodeGroup>
+```bash curl
+curl https://api.tryprofound.com/v1/organizations \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+});
+
+const orgs = await client.organizations.list();
+```
+
+```python Python
+import profound
+
+client = profound.Profound(api_key="<PROFOUND_API_KEY>")
+
+orgs = client.organizations.list()
+```
+</CodeGroup>
+
+<Note>
+  If you omit the `Authorization` header or supply an invalid key, the API returns `401 Unauthorized`.
+</Note>
+
+## Request format
+
+For `GET` endpoints, pass parameters as URL query strings. For `POST` and `PATCH` endpoints, send a JSON body and include the `Content-Type` header:
+
+```
+Content-Type: application/json
+```
+
+All string values are UTF-8 encoded. Boolean query parameters accept `true` or `false` as strings.
+
+## Versioning
+
+The current API version is **v1**, reflected in the base URL. Profound uses URL-level versioning. When a breaking change is introduced, a new version path (e.g. `/v2`) will be released alongside the previous version. You will receive advance notice before any version is deprecated.
+
+Non-breaking additions — new response fields, new optional query parameters, new endpoints — may be introduced at any time without a version bump. Build your integration to ignore unknown fields.
+
+## Pagination
+
+Endpoints that return lists use **cursor-based pagination**. The response includes a `pagination` object of type `CursorPagination`:
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="CursorPagination fields">
+    <ResponseField name="next_cursor" type="string | null">
+      An opaque cursor string. Pass this value as the `cursor` query parameter on your next request to fetch the following page. `null` when you have reached the last page.
+    </ResponseField>
+    <ResponseField name="has_more" type="boolean">
+      `true` when additional pages exist beyond the current response.
+    </ResponseField>
+    <ResponseField name="total" type="integer">
+      Total number of records matching your query, across all pages.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+To paginate through a full result set, repeat requests with `cursor=<next_cursor>` until `has_more` is `false`:
+
+```bash
+# First page
+curl "https://api.tryprofound.com/v1/organizations/assets?limit=50" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+
+# Next page (use next_cursor from previous response)
+curl "https://api.tryprofound.com/v1/organizations/assets?limit=50&cursor=eyJpZCI6IjEyMyJ9" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+## Error format
+
+When a request fails, the API returns a non-2xx HTTP status code and a JSON error body with the following shape:
+
+```json
+{
+  "status": 422,
+  "name": "UnprocessableEntityError",
+  "message": "organization_id is required when calling this endpoint without an authenticated session."
+}
+```
+
+<ResponseField name="status" type="integer">
+  The HTTP status code, mirrored in the response body for convenience.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  A machine-readable error name you can match against in code (e.g. `UnauthorizedError`, `NotFoundError`, `UnprocessableEntityError`).
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  A human-readable description of what went wrong and, when possible, how to fix it.
+</ResponseField>
+
+Common status codes:
+
+| Status | Name | Meaning |
+|--------|------|---------|
+| `400` | `BadRequestError` | Malformed request syntax or missing required field |
+| `401` | `UnauthorizedError` | Missing or invalid API key |
+| `403` | `ForbiddenError` | Valid key, but insufficient permissions |
+| `404` | `NotFoundError` | The requested resource does not exist |
+| `422` | `UnprocessableEntityError` | Valid syntax but semantic validation failed |
+| `429` | `RateLimitError` | You have exceeded your request quota |
+| `500` | `InternalServerError` | Unexpected server-side error |
+
+## Rate limiting
+
+Profound enforces rate limits to ensure fair access. Limits are applied per API key. When you exceed a limit the API returns `429 Too Many Requests` with a `Retry-After` header indicating how many seconds to wait before retrying.
+
+<Tip>
+  Implement exponential backoff in your integration. On a `429`, wait at least the number of seconds specified in `Retry-After` before retrying, and double the wait on each subsequent failure.
+</Tip>
+
+If your use case requires higher limits, contact [support@tryprofound.com](mailto:support@tryprofound.com) to discuss an upgrade.
+
+## SDKs
+
+Profound publishes official SDK libraries that wrap the REST API and handle authentication, retries, and type safety for you.
+
+<CardGroup cols={2}>
+  <Card title="TypeScript SDK" icon="js" href="/sdks/typescript">
+    Install `@profoundai/client` from npm
+  </Card>
+  <Card title="Python SDK" icon="python" href="/sdks/python">
+    Install `profound` from PyPI
+  </Card>
+</CardGroup>

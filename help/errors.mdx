@@ -1,0 +1,162 @@
+---
+title: "Profound API Error Reference and Troubleshooting Guide"
+sidebarTitle: "Error Codes"
+description: "A complete reference for Profound API error codes, error types in the TypeScript and Python SDKs, and how to resolve each error in your integration."
+---
+
+When the Profound API cannot fulfill a request, it responds with a structured error that includes an HTTP status code, a typed error class, and a human-readable message. Both the TypeScript and Python SDKs surface these errors as typed exceptions, so you can catch and handle each case precisely in your integration code.
+
+## Error Code Reference
+
+| HTTP Status | Error Class | Description |
+|---|---|---|
+| 400 | `BadRequestError` | The request was malformed or contained invalid parameters. Check your request body and query arguments. |
+| 401 | `AuthenticationError` | Your API key is missing or invalid. Verify the key and ensure it is being passed correctly. |
+| 403 | `PermissionDeniedError` | Your API key is valid, but it does not have permission to perform this action. Check the key's assigned roles in the dashboard. |
+| 404 | `NotFoundError` | The requested resource does not exist. Double-check the resource ID or path in your request. |
+| 422 | `UnprocessableEntityError` | The request format is valid, but the content contains a semantic error. Review the error message for details on which field is invalid. |
+| 429 | `RateLimitError` | You have exceeded the allowed request rate. Slow down your request cadence or enable automatic retries. See [Rate Limits](/help/rate-limits). |
+| 500+ | `InternalServerError` | An unexpected error occurred on Profound's servers. These are retried automatically by the SDK. |
+| N/A | `APIConnectionError` | The SDK could not establish a connection to the Profound API. Check your network configuration. |
+| N/A | `APIConnectionTimeoutError` | The request timed out before the server responded. The default timeout is 60 seconds, configurable via the `timeout` option. |
+
+## Catching Errors in TypeScript
+
+Every error thrown by the TypeScript SDK extends `Profound.APIError`, which exposes the HTTP `status` code, the error `name`, the `message`, and the raw response `headers`. Wrap your API calls in a `try/catch` block and inspect these properties to branch on specific error types.
+
+```ts
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+try {
+  const categories = await client.organizations.categories.list();
+} catch (err) {
+  if (err instanceof Profound.APIError) {
+    console.log(err.status);   // e.g. 401
+    console.log(err.name);     // e.g. 'AuthenticationError'
+    console.log(err.message);
+    console.log(err.headers);
+  }
+}
+```
+
+You can also catch individual error subtypes when you need to handle them differently:
+
+```ts
+import Profound from "@profoundai/client";
+
+try {
+  const categories = await client.organizations.categories.list();
+} catch (err) {
+  if (err instanceof Profound.AuthenticationError) {
+    // Redirect the user to re-enter their API key
+  } else if (err instanceof Profound.RateLimitError) {
+    // Back off and retry after the suggested delay
+  } else if (err instanceof Profound.InternalServerError) {
+    // Log and alert — this is Profound's fault, not yours
+  } else {
+    throw err; // Re-throw unexpected errors
+  }
+}
+```
+
+## Catching Errors in Python
+
+The Python SDK raises typed exceptions from the `profound.exceptions` module. Catch the most specific exception first, then fall back to the base `APIError` class for anything else.
+
+```python
+from profound import Profound
+from profound.exceptions import APIError, AuthenticationError, RateLimitError
+
+client = Profound(api_key="your-api-key")
+
+try:
+    categories = client.organizations.categories.list()
+except AuthenticationError as e:
+    print(f"Auth failed: {e.status_code} {e.message}")
+except RateLimitError as e:
+    print(f"Rate limited: {e.response.headers.get('Retry-After')} seconds")
+except APIError as e:
+    print(f"API error: {e.status_code} {e.message}")
+```
+
+All exception classes in the Python SDK expose a `status_code` integer, a `message` string, and a `response` object that gives you access to the raw headers and body.
+
+## Automatic Retry Behavior
+
+Both SDKs automatically retry requests that fail with the following status codes:
+
+- **408** — Request Timeout
+- **409** — Conflict
+- **429** — Rate Limit Exceeded
+- **500 and above** — Server-side errors
+
+By default, the SDK retries up to **2 times** with exponential backoff before raising the final error to your code. You can change this limit by passing the `maxRetries` option (TypeScript) or `max_retries` option (Python) to the client constructor.
+
+```ts
+// TypeScript — increase retries to 4
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+  maxRetries: 4,
+});
+```
+
+```python
+# Python — disable retries entirely
+client = Profound(api_key="your-api-key", max_retries=0)
+```
+
+You can also override the retry count on a per-request basis:
+
+```ts
+// TypeScript — override retries for a single call
+const categories = await client.organizations.categories.list({
+  maxRetries: 5,
+});
+```
+
+```python
+# Python — override retries for a single call
+categories = client.organizations.categories.list(max_retries=5)
+```
+
+## Request Timeout
+
+The default request timeout is **60 seconds**. If the server has not responded within that window, the SDK raises an `APIConnectionTimeoutError`. You can adjust the timeout at the client or request level:
+
+```ts
+// TypeScript — set a 30-second timeout globally
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+  timeout: 30_000, // milliseconds
+});
+```
+
+```python
+# Python — set a 30-second timeout globally
+client = Profound(api_key="your-api-key", timeout=30.0)  # seconds
+```
+
+## Debugging Tips
+
+If you're unsure why a request is failing, enabling debug logging will print the full request URL, headers, and response body to your console.
+
+```ts
+// TypeScript — enable debug logging
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+  logLevel: "debug",
+});
+```
+
+```python
+# Python — enable debug logging via environment variable
+import os
+os.environ["PROFOUND_LOG"] = "debug"
+
+from profound import Profound
+client = Profound(api_key="your-api-key")
+```
+
+When filing a bug report or contacting support, include the `request-id` value from the response headers — it uniquely identifies the failing request on Profound's servers.

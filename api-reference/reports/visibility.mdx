@@ -1,0 +1,205 @@
+---
+title: "Visibility Report — Track AI Brand Presence Over Time"
+sidebarTitle: "Visibility"
+description: "Pull structured visibility reports showing how often your brand appears in AI-generated answers. Filter by date, bot, region, persona, and more."
+---
+
+The Visibility Report measures how frequently your brand surfaces in AI-generated answers across models, regions, personas, and prompt categories. Use it to benchmark brand presence over time, compare performance across bots, and pinpoint the filters that most influence your AI visibility score.
+
+## Request Parameters
+
+<ParamField query="start_date" type="string" required>
+  The start of the reporting window in `YYYY-MM-DD` format. Results include data from this date onward.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  The end of the reporting window in `YYYY-MM-DD` format. Results include data up to and including this date.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter results to a specific AI bot or model by name (e.g., `"chatgpt"`, `"gemini"`). Omit to aggregate across all bots.
+</ParamField>
+
+<ParamField query="model_id" type="string">
+  Filter by a specific model ID. Use this to distinguish between versions of the same bot.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Restrict results to a specific geographic region. Accepts a Profound region identifier.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Scope the report to a single prompt category. Useful for comparing visibility within a vertical or product line.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Filter by a user persona to see how visibility differs across audience segments.
+</ParamField>
+
+<ParamField query="prompt_type" type="string">
+  Limit results to a specific prompt type (e.g., `"informational"`, `"commercial"`).
+</ParamField>
+
+<ParamField query="tag_id" type="string">
+  Filter by a tag applied to your prompts or assets. Accepts a Profound tag identifier.
+</ParamField>
+
+<ParamField query="topic_id" type="string">
+  Narrow the report to a single topic. Accepts a Profound topic identifier.
+</ParamField>
+
+<ParamField query="asset_id" type="string">
+  Filter visibility data to a specific content asset (page or URL) tracked in Profound.
+</ParamField>
+
+<Note>
+  Both `start_date` and `end_date` are required. All other parameters are optional filters — combining them narrows the dataset progressively.
+</Note>
+
+## Streaming
+
+Use `client.reports.streamVisibility()` (TypeScript) or the equivalent streaming endpoint to receive results as a server-sent event stream. This is recommended for large date ranges or high-cardinality filter combinations that may take several seconds to resolve.
+
+<Tip>
+  For dashboards and live polling, prefer the streaming variant to display partial results as they arrive rather than waiting for the full response.
+</Tip>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/visibility?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.visibility({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot_name: "chatgpt",
+  region_id: "us",
+  category_id: "cat_abc123",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.visibility(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot_name="chatgpt",
+    region_id="us",
+    category_id="cat_abc123",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### Streaming Example
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/visibility/stream?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Accept: text/event-stream"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const stream = await client.reports.streamVisibility({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+for await (const chunk of stream) {
+  console.log(chunk);
+}
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+for chunk in client.reports.stream_visibility(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+):
+    print(chunk)
+```
+
+</CodeGroup>
+
+## Response Fields
+
+<ResponseField name="data" type="array">
+  Array of visibility data points, each representing an aggregated time bucket or filter combination.
+
+  <Expandable title="data[]">
+    <ResponseField name="date" type="string">
+      The date of this data point in `YYYY-MM-DD` format.
+    </ResponseField>
+
+    <ResponseField name="visibility_score" type="number">
+      A numeric score (0–100) representing how prominently your brand appears in AI answers for this bucket.
+    </ResponseField>
+
+    <ResponseField name="mention_count" type="integer">
+      Total number of AI-generated responses in which your brand was mentioned during this period.
+    </ResponseField>
+
+    <ResponseField name="prompt_count" type="integer">
+      Total number of prompts evaluated in this bucket.
+    </ResponseField>
+
+    <ResponseField name="bot_name" type="string">
+      The AI bot or model that generated these responses, if filtered or grouped by bot.
+    </ResponseField>
+
+    <ResponseField name="region_id" type="string">
+      The geographic region for this data point, if applicable.
+    </ResponseField>
+
+    <ResponseField name="category_id" type="string">
+      The prompt category associated with this data point, if applicable.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Metadata about the report query and aggregation settings.
+
+  <Expandable title="meta">
+    <ResponseField name="start_date" type="string">
+      The start date used for this report.
+    </ResponseField>
+
+    <ResponseField name="end_date" type="string">
+      The end date used for this report.
+    </ResponseField>
+
+    <ResponseField name="total_records" type="integer">
+      Total number of data points returned.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

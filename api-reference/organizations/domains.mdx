@@ -1,0 +1,107 @@
+---
+title: "List Organization Domains — Profound REST API Reference"
+sidebarTitle: "Domains"
+description: "GET /organizations/domains — Returns the tracked web domains for your organization, used to measure AI citation frequency across your web properties."
+---
+
+The Domains endpoint returns all web domains associated with your organization that Profound monitors for AI citation frequency. Domains are the top-level web properties (e.g., `yourcompany.com`) from which individual asset URLs are tracked. Use this endpoint to list configured domains and retrieve their IDs for use in report filters.
+
+## Request
+
+```bash
+GET https://api.tryprofound.com/v1/organizations/domains
+Authorization: Bearer <PROFOUND_API_KEY>
+```
+
+## Parameters
+
+<ParamField query="organization_id" type="string">
+  Filter results to a specific organization. If omitted, returns domains for all organizations accessible with your API key.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Filter domains by geographic region. Use IDs from the [Regions](/api-reference/organizations/regions) endpoint.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Maximum number of results to return. Must be between 1 and 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from the previous response's `next_cursor` field.
+</ParamField>
+
+## Code examples
+
+<CodeGroup>
+
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/domains" \
+  -H "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```ts TypeScript
+import Profound from '@profoundai/client';
+
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+});
+
+const domains = await client.organizations.domains({
+  // organization_id: 'org_abc123',
+  // region_id: 'region_us',
+});
+console.log(domains);
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(
+    api_key=os.environ.get("PROFOUND_API_KEY"),
+)
+
+domains = client.organizations.domains(
+    # organization_id="org_abc123",
+    # region_id="region_us",
+)
+print(domains)
+```
+
+</CodeGroup>
+
+## Response
+
+<ResponseField name="domains" type="array">
+  List of domain objects for your organization.
+
+  <Expandable title="domain fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the domain.
+    </ResponseField>
+    <ResponseField name="domain" type="string">
+      The domain name (e.g., `yourcompany.com`).
+    </ResponseField>
+    <ResponseField name="display_name" type="string">
+      Human-readable label for the domain.
+    </ResponseField>
+    <ResponseField name="is_primary" type="boolean">
+      Whether this is the primary domain for the organization.
+    </ResponseField>
+    <ResponseField name="region_ids" type="array">
+      List of region IDs this domain is active in.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when the domain was added.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for retrieving the next page of results. `null` when there are no more results.
+</ResponseField>
+
+<Note>
+  Domain IDs can be passed as filters in report endpoints such as `GET /reports/citations` to scope results to a specific domain.
+</Note>

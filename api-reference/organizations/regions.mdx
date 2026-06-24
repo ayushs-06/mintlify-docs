@@ -1,0 +1,101 @@
+---
+title: "List Organization Regions — Profound REST API Reference"
+sidebarTitle: "Regions"
+description: "GET /organizations/regions — Returns geographic regions configured for your organization, used to scope AI visibility queries by market and language."
+---
+
+The Regions endpoint returns all geographic markets configured for your organization in Profound. Regions control which locale and language AI assistants are queried in — for example, prompts run in the US English market produce different results than the same prompts run in German or French markets. Pass region IDs as filters in report endpoints to compare AI visibility across geographies.
+
+## Request
+
+```bash
+GET https://api.tryprofound.com/v1/organizations/regions
+Authorization: Bearer <PROFOUND_API_KEY>
+```
+
+## Parameters
+
+<ParamField query="organization_id" type="string">
+  Filter results to a specific organization. If omitted, returns regions for all organizations accessible with your API key.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Maximum number of results to return. Must be between 1 and 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from the previous response's `next_cursor` field.
+</ParamField>
+
+## Code examples
+
+<CodeGroup>
+
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/regions" \
+  -H "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```ts TypeScript
+import Profound from '@profoundai/client';
+
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+});
+
+const regions = await client.organizations.regions({
+  // organization_id: 'org_abc123',
+});
+console.log(regions);
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(
+    api_key=os.environ.get("PROFOUND_API_KEY"),
+)
+
+regions = client.organizations.regions(
+    # organization_id="org_abc123",
+)
+print(regions)
+```
+
+</CodeGroup>
+
+## Response
+
+<ResponseField name="regions" type="array">
+  List of geographic region objects.
+
+  <Expandable title="region fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the region.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Human-readable region name (e.g., `United States`, `Germany`).
+    </ResponseField>
+    <ResponseField name="country_code" type="string">
+      ISO 3166-1 alpha-2 country code (e.g., `US`, `DE`, `FR`).
+    </ResponseField>
+    <ResponseField name="language_code" type="string">
+      BCP 47 language tag used for prompts in this region (e.g., `en-US`, `de-DE`).
+    </ResponseField>
+    <ResponseField name="timezone" type="string">
+      IANA timezone identifier for the region (e.g., `America/New_York`).
+    </ResponseField>
+    <ResponseField name="is_default" type="boolean">
+      Whether this is the default region for your organization.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for retrieving the next page of results. `null` when there are no more results.
+</ResponseField>
+
+<Tip>
+  Always pass a `region_id` filter in report endpoints to get market-specific visibility data. Without a region filter, results aggregate across all configured regions.
+</Tip>

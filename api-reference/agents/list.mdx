@@ -1,0 +1,431 @@
+---
+title: "Agents API — Create, Manage, and Publish AI Workflows"
+sidebarTitle: "Agents"
+description: "Create, update, publish, and list Profound AI agents—custom workflows built from composable node types that automate analytics and reporting tasks."
+---
+
+Profound Agents are custom AI workflows built from composable node types — each node performs a discrete task such as fetching a report, analyzing data, or calling an external API. Agents let you automate complex multi-step analytics workflows and schedule them to run on a recurring basis.
+
+Use the Agents API to list your existing agents, create new ones, update their node graphs, and publish them for execution.
+
+## List Agents
+
+Retrieve all agents in your organization.
+
+### Parameters
+
+<ParamField query="organization_id" type="string">
+  Filter agents to a specific organization. Defaults to your authenticated organization.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by agent status. Accepted values: `"draft"` or `"published"`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of agents to return per page.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned by a previous list response. Pass this value to retrieve the next page of results.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/agents" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const agents = await client.agents.list({});
+
+console.log(agents);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+agents = client.agents.list()
+
+print(agents)
+```
+
+</CodeGroup>
+
+## Retrieve an Agent
+
+Fetch details for a specific agent by its ID.
+
+### Parameters
+
+<ParamField path="agentID" type="string" required>
+  The unique identifier of the agent to retrieve.
+</ParamField>
+
+<ParamField query="include_graph" type="boolean">
+  When `true`, the response includes the agent's full node-and-edge graph. Defaults to `false`.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/agents/agent_abc123" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const agent = await client.agents.retrieve("agent_abc123", {});
+
+console.log(agent);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+agent = client.agents.retrieve("agent_abc123")
+
+print(agent)
+```
+
+</CodeGroup>
+
+## Create an Agent
+
+Define a new agent with a name, optional description, and an initial node graph.
+
+### Parameters
+
+<ParamField body="name" type="string" required>
+  A human-readable name for the agent (e.g., `"Weekly Visibility Summary"`).
+</ParamField>
+
+<ParamField body="description" type="string">
+  An optional description of what this agent does.
+</ParamField>
+
+<ParamField body="nodes" type="array">
+  Array of node objects defining the steps in the workflow. Each node references a `node_type` and contains configuration specific to that type. Use `client.agents.nodeTypes.list()` to discover available node types.
+</ParamField>
+
+<ParamField body="edges" type="array">
+  Array of edge objects connecting nodes in the workflow graph. Each edge specifies a `source` node ID and `target` node ID.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/agents" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Weekly Visibility Summary",
+    "description": "Pulls visibility data and formats a weekly summary",
+    "nodes": [],
+    "edges": []
+  }'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const agent = await client.agents.create({
+  name: "Weekly Visibility Summary",
+  description: "Pulls visibility data and formats a weekly summary",
+  nodes: [],
+  edges: [],
+});
+
+console.log(agent);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+agent = client.agents.create(
+    name="Weekly Visibility Summary",
+    description="Pulls visibility data and formats a weekly summary",
+    nodes=[],
+    edges=[],
+)
+
+print(agent)
+```
+
+</CodeGroup>
+
+## Update an Agent
+
+Modify an existing agent's properties or node graph. All fields are optional — only the fields you provide will be updated.
+
+### Parameters
+
+<ParamField path="agentID" type="string" required>
+  The ID of the agent to update.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Updated display name for the agent.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description for the agent.
+</ParamField>
+
+<ParamField body="nodes" type="array">
+  Replacement node array for the agent's workflow graph.
+</ParamField>
+
+<ParamField body="edges" type="array">
+  Replacement edge array for the agent's workflow graph.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request PATCH \
+  --url "https://api.profound.ai/v1/agents/agent_abc123" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"description": "Updated description"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const updated = await client.agents.update("agent_abc123", {
+  description: "Updated description",
+});
+
+console.log(updated);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+updated = client.agents.update(
+    "agent_abc123",
+    {"description": "Updated description"},
+)
+
+print(updated)
+```
+
+</CodeGroup>
+
+## Publish an Agent
+
+Publish an agent to make it available for runs.
+
+<Note>
+  An agent must be published before you can create runs against it. Unpublished agents are in draft state and cannot be executed.
+</Note>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/agents/agent_abc123/publish" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const result = await client.agents.publish("agent_abc123");
+
+console.log(result);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+result = client.agents.publish("agent_abc123")
+
+print(result)
+```
+
+</CodeGroup>
+
+## Retrieve Agent Graph
+
+Fetch the full node-and-edge graph for an agent, optionally pinned to a specific published version.
+
+### Parameters
+
+<ParamField path="agentID" type="string" required>
+  The unique identifier of the agent whose graph you want to retrieve.
+</ParamField>
+
+<ParamField query="version" type="string">
+  A specific published version of the agent graph to retrieve. Omit to get the latest version.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/agents/agent_abc123/graph" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const graph = await client.agents.retrieveGraph("agent_abc123", {});
+
+console.log(graph);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+graph = client.agents.retrieve_graph("agent_abc123")
+
+print(graph)
+```
+
+</CodeGroup>
+
+## Node Types
+
+Use `client.agents.nodeTypes.list()` to discover available node types and `client.agents.nodeTypes.retrieveSchema(nodeType)` to get the configuration schema for a specific type.
+
+<CodeGroup>
+
+```bash curl
+# List all available node types
+curl --request GET \
+  --url "https://api.profound.ai/v1/agents/node-types" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+
+# Get schema for a specific node type
+curl --request GET \
+  --url "https://api.profound.ai/v1/agents/node-types/visibility_report" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+// List all available node types
+const nodeTypes = await client.agents.nodeTypes.list();
+
+// Get schema for a specific node type
+const schema = await client.agents.nodeTypes.retrieveSchema("visibility_report");
+```
+
+```python Python
+# List all available node types
+node_types = client.agents.node_types.list()
+
+# Get schema for a specific node type
+schema = client.agents.node_types.retrieve_schema("visibility_report")
+```
+
+</CodeGroup>
+
+## Response Fields
+
+<ResponseField name="id" type="string">
+  The unique identifier of the agent.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The display name of the agent.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The agent's description, if set.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The agent's current status: `"draft"` or `"published"`.
+</ResponseField>
+
+<ResponseField name="nodes" type="array">
+  Array of node definitions in the agent's workflow graph.
+
+  <Expandable title="nodes[]">
+    <ResponseField name="id" type="string">
+      Unique node identifier within the graph.
+    </ResponseField>
+
+    <ResponseField name="node_type" type="string">
+      The type of node (e.g., `"visibility_report"`, `"send_email"`).
+    </ResponseField>
+
+    <ResponseField name="config" type="object">
+      Configuration object specific to the node type.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="edges" type="array">
+  Array of edges connecting nodes.
+
+  <Expandable title="edges[]">
+    <ResponseField name="source" type="string">
+      The ID of the source node.
+    </ResponseField>
+
+    <ResponseField name="target" type="string">
+      The ID of the target node.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the agent was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of the last update.
+</ResponseField>

@@ -1,0 +1,202 @@
+---
+title: "Prompt Answers — Retrieve AI Responses for Your Prompts"
+sidebarTitle: "Answers"
+description: "Retrieve AI assistant answers for your tracked prompts. Filter by category, bot, date range, and persona to analyze how models respond to your queries."
+---
+
+The Prompt Answers endpoint returns the AI-generated answers Profound collected when querying your tracked prompts. Each answer record captures the full response text, the bot that generated it, the prompt context, and metadata like date, region, and persona. Use this data to audit AI behavior, spot inaccurate claims, or feed downstream analysis pipelines.
+
+## Request Parameters
+
+<ParamField query="category_id" type="string" required>
+  The prompt category to retrieve answers for. Every answer is associated with a category — this is a required field.
+</ParamField>
+
+<ParamField query="start_date" type="string" required>
+  The start of the date range in `YYYY-MM-DD` format. Answers collected on or after this date are included.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  The end of the date range in `YYYY-MM-DD` format. Answers collected on or before this date are included.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter answers to a specific AI bot (e.g., `"chatgpt"`, `"gemini"`, `"claude"`).
+</ParamField>
+
+<ParamField query="model_id" type="string">
+  Filter to a specific model version within a bot family.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Retrieve answers generated for a specific user persona.
+</ParamField>
+
+<ParamField query="prompt_id" type="string">
+  Narrow results to a single tracked prompt by its Profound ID.
+</ParamField>
+
+<ParamField query="prompt_type" type="string">
+  Filter by prompt type such as `"informational"`, `"commercial"`, or `"navigational"`.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Restrict answers to those collected in a specific geographic region.
+</ParamField>
+
+<ParamField query="tag_id" type="string">
+  Filter by a tag applied to your tracked prompts.
+</ParamField>
+
+<ParamField query="topic_id" type="string">
+  Narrow results to answers associated with a specific topic.
+</ParamField>
+
+<Note>
+  `category_id`, `start_date`, and `end_date` are all required. Combining `prompt_id` with a narrow date range is the most efficient way to pull the full answer history for a single question.
+</Note>
+
+<Tip>
+  Pair the Prompt Answers endpoint with the Sentiment Report to correlate raw answer text with aggregated sentiment trends — useful for digging into the specific responses that pulled scores in a particular direction.
+</Tip>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/prompts/answers?category_id=cat_abc123&start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const answers = await client.prompts.answers({
+  category_id: "cat_abc123",
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot_name: "chatgpt",
+  persona_id: "persona_us_adult",
+});
+
+console.log(answers);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+answers = client.prompts.answers(
+    category_id="cat_abc123",
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot_name="chatgpt",
+    persona_id="persona_us_adult",
+)
+
+print(answers)
+```
+
+</CodeGroup>
+
+## Response Fields
+
+<ResponseField name="data" type="array">
+  List of answer records matching the query filters.
+
+  <Expandable title="data[]">
+    <ResponseField name="answer_id" type="string">
+      Unique identifier for this answer record.
+    </ResponseField>
+
+    <ResponseField name="prompt_id" type="string">
+      The Profound ID of the prompt that generated this answer.
+    </ResponseField>
+
+    <ResponseField name="prompt_text" type="string">
+      The exact text of the prompt submitted to the AI assistant.
+    </ResponseField>
+
+    <ResponseField name="answer_text" type="string">
+      The full text of the AI-generated answer.
+    </ResponseField>
+
+    <ResponseField name="bot_name" type="string">
+      The AI assistant that generated this answer (e.g., `"chatgpt"`, `"gemini"`).
+    </ResponseField>
+
+    <ResponseField name="model_id" type="string">
+      The specific model version used, if available.
+    </ResponseField>
+
+    <ResponseField name="date" type="string">
+      The date this answer was collected in `YYYY-MM-DD` format.
+    </ResponseField>
+
+    <ResponseField name="region_id" type="string">
+      The geographic region in which the prompt was run.
+    </ResponseField>
+
+    <ResponseField name="persona_id" type="string">
+      The persona used when submitting the prompt, if applicable.
+    </ResponseField>
+
+    <ResponseField name="category_id" type="string">
+      The prompt category this answer belongs to.
+    </ResponseField>
+
+    <ResponseField name="brand_mentioned" type="boolean">
+      Whether your brand was mentioned in this answer.
+    </ResponseField>
+
+    <ResponseField name="citations" type="array">
+      List of URLs cited within the answer, if any.
+
+      <Expandable title="citations[]">
+        <ResponseField name="url" type="string">
+          The cited URL.
+        </ResponseField>
+
+        <ResponseField name="domain" type="string">
+          The root domain of the cited URL.
+        </ResponseField>
+
+        <ResponseField name="is_your_domain" type="boolean">
+          Whether this citation belongs to your tracked domain.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Pagination and query metadata.
+
+  <Expandable title="meta">
+    <ResponseField name="start_date" type="string">
+      The start date used for this query.
+    </ResponseField>
+
+    <ResponseField name="end_date" type="string">
+      The end date used for this query.
+    </ResponseField>
+
+    <ResponseField name="total_records" type="integer">
+      Total number of answer records matching the filters.
+    </ResponseField>
+
+    <ResponseField name="page" type="integer">
+      Current page number, if results are paginated.
+    </ResponseField>
+
+    <ResponseField name="page_size" type="integer">
+      Number of records per page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

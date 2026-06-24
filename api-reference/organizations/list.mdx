@@ -1,0 +1,118 @@
+---
+title: "List Organizations — Profound REST API Reference"
+sidebarTitle: "List Organizations"
+description: "GET /organizations returns every organization your API key can access, including IDs, display names, slugs, and configuration metadata."
+---
+
+Organizations are the top-level containers in Profound. Each organization maps to a brand or business unit and groups together its domains, categories, personas, and tracked AI models. This endpoint returns every organization your API key has access to.
+
+## Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations
+```
+
+## Query parameters
+
+This endpoint accepts no query parameters. All organizations accessible to your API key are returned in a single response.
+
+<Note>
+  If you manage multiple brands, each will appear as a separate object in the `organizations` array. Use the `id` field from each object as the `organization_id` parameter in subsequent requests.
+</Note>
+
+## Code examples
+
+<CodeGroup>
+```bash curl
+curl https://api.tryprofound.com/v1/organizations \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+});
+
+const response = await client.organizations.list();
+console.log(response.organizations);
+```
+
+```python Python
+import profound
+
+client = profound.Profound(api_key="<PROFOUND_API_KEY>")
+
+response = client.organizations.list()
+print(response.organizations)
+```
+</CodeGroup>
+
+## Response
+
+A successful request returns `200 OK` and an `OrganizationListResponse` object.
+
+<ResponseField name="organizations" type="array">
+  An array of organization objects associated with your account.
+
+  <Expandable title="Organization fields">
+    <ResponseField name="id" type="string">
+      The unique identifier for the organization. Use this value as `organization_id` in all other API calls.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      The human-readable display name of the organization (e.g. `"Acme Corp"`).
+    </ResponseField>
+
+    <ResponseField name="slug" type="string">
+      A URL-safe identifier derived from the organization name (e.g. `"acme-corp"`).
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the organization was created.
+    </ResponseField>
+
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the most recent update to the organization record.
+    </ResponseField>
+
+    <ResponseField name="settings" type="object">
+      Organization-level configuration flags.
+
+      <Expandable title="Settings fields">
+        <ResponseField name="default_region_id" type="string | null">
+          The ID of the default geographic region used when region is not explicitly specified in a query.
+        </ResponseField>
+
+        <ResponseField name="timezone" type="string">
+          The organization's reporting timezone in IANA format (e.g. `"America/New_York"`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "organizations": [
+    {
+      "id": "org_01hx9k2m3n4p5q6r7s8t9u0v",
+      "name": "Acme Corp",
+      "slug": "acme-corp",
+      "created_at": "2024-01-15T09:00:00Z",
+      "updated_at": "2024-11-03T14:22:11Z",
+      "settings": {
+        "default_region_id": "reg_01hx9k2m3n4p5q6r7s8",
+        "timezone": "America/New_York"
+      }
+    }
+  ]
+}
+```
+
+<Tip>
+  Store the `id` of your primary organization in an environment variable (e.g. `PROFOUND_ORG_ID`). Nearly every other endpoint accepts `organization_id` as a filter, and keeping it in config makes switching between organizations straightforward.
+</Tip>

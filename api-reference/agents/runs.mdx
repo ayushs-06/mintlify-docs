@@ -1,0 +1,249 @@
+---
+title: "Agent Runs — Execute and Monitor Profound AI Workflows"
+sidebarTitle: "Runs"
+description: "Create and retrieve agent run results. Start a run by passing inputs to an agent, then poll for completion status and output data."
+---
+
+Agent Runs are individual executions of a published Profound agent. When you start a run, Profound processes the agent's workflow graph — executing each node in sequence with the inputs you provide — and returns the final output when the workflow completes. Runs are asynchronous: you create a run and then poll the retrieve endpoint to check its status.
+
+## Create a Run
+
+Start a new execution of a published agent by passing an optional `inputs` object.
+
+### Parameters
+
+<ParamField path="agentID" type="string" required>
+  The unique identifier of the published agent to execute.
+</ParamField>
+
+<ParamField body="inputs" type="object">
+  Key-value pairs passed to the agent's input nodes at the start of the workflow. The expected keys depend on the agent's graph design. Omit this field if the agent has no required inputs.
+
+  <Expandable title="inputs">
+    <ParamField body="[key]" type="any">
+      Any input key-value pair defined by the agent's input node configuration.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<Note>
+  The agent must be in `"published"` status before you can create a run. Call `client.agents.publish(agentID)` first if needed — see the [Agents API](/api-reference/agents/list) page for details.
+</Note>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/agents/agent_abc123/runs" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "inputs": {
+      "start_date": "2025-01-01",
+      "end_date": "2025-01-31"
+    }
+  }'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const run = await client.agents.runs.create("agent_abc123", {
+  inputs: {
+    start_date: "2025-01-01",
+    end_date: "2025-01-31",
+  },
+});
+
+console.log(run.id, run.status);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+run = client.agents.runs.create(
+    "agent_abc123",
+    inputs={
+        "start_date": "2025-01-01",
+        "end_date": "2025-01-31",
+    },
+)
+
+print(run.id, run.status)
+```
+
+</CodeGroup>
+
+## Retrieve a Run
+
+Poll the status of a previously created run to check whether it has completed and, if so, retrieve its output.
+
+### Parameters
+
+<ParamField path="runID" type="string" required>
+  The unique identifier of the run to retrieve.
+</ParamField>
+
+<ParamField query="agent_id" type="string" required>
+  The ID of the agent this run belongs to.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/agents/runs/run_xyz789?agent_id=agent_abc123" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const run = await client.agents.runs.retrieve("run_xyz789", {
+  agent_id: "agent_abc123",
+});
+
+console.log(run.status, run.output);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+run = client.agents.runs.retrieve(
+    "run_xyz789",
+    agent_id="agent_abc123",
+)
+
+print(run.status, run.output)
+```
+
+</CodeGroup>
+
+## Polling Pattern
+
+Runs are asynchronous. Poll the retrieve endpoint until `status` is `"completed"` or `"failed"`.
+
+<CodeGroup>
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+async function waitForRun(agentId: string, runId: string, intervalMs = 2000) {
+  while (true) {
+    const run = await client.agents.runs.retrieve(runId, {
+      agent_id: agentId,
+    });
+
+    if (run.status === "completed") {
+      return run.output;
+    }
+
+    if (run.status === "failed") {
+      throw new Error(`Run failed: ${run.error_message}`);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}
+
+const run = await client.agents.runs.create("agent_abc123", {
+  inputs: { start_date: "2025-01-01", end_date: "2025-01-31" },
+});
+
+const output = await waitForRun("agent_abc123", run.id);
+console.log(output);
+```
+
+```python Python
+import os
+import time
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+
+def wait_for_run(agent_id: str, run_id: str, interval: float = 2.0):
+    while True:
+        run = client.agents.runs.retrieve(run_id, agent_id=agent_id)
+
+        if run.status == "completed":
+            return run.output
+
+        if run.status == "failed":
+            raise RuntimeError(f"Run failed: {run.error_message}")
+
+        time.sleep(interval)
+
+
+run = client.agents.runs.create(
+    "agent_abc123",
+    inputs={"start_date": "2025-01-01", "end_date": "2025-01-31"},
+)
+
+output = wait_for_run("agent_abc123", run.id)
+print(output)
+```
+
+</CodeGroup>
+
+<Tip>
+  Use exponential back-off when polling in production to avoid rate-limiting on high-frequency polling loops.
+</Tip>
+
+## Response Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier for this run.
+</ResponseField>
+
+<ResponseField name="agent_id" type="string">
+  The ID of the agent that was executed.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current execution status. One of:
+  - `"pending"` — the run is queued but has not yet started.
+  - `"running"` — the agent workflow is actively executing.
+  - `"completed"` — the run finished successfully.
+  - `"failed"` — the run encountered an unrecoverable error.
+</ResponseField>
+
+<ResponseField name="inputs" type="object">
+  The input key-value pairs provided when the run was created.
+</ResponseField>
+
+<ResponseField name="output" type="object">
+  The output data produced by the agent workflow. Only present when `status` is `"completed"`. Structure depends on the agent's output node configuration.
+</ResponseField>
+
+<ResponseField name="error_message" type="string">
+  A human-readable description of the error that caused the run to fail. Only present when `status` is `"failed"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the run was created.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp of when the run finished. Only present when `status` is `"completed"` or `"failed"`.
+</ResponseField>
+
+<ResponseField name="duration_ms" type="integer">
+  Total execution time in milliseconds. Only present when the run has finished.
+</ResponseField>

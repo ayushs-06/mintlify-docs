@@ -1,0 +1,668 @@
+---
+title: "Categories API — Manage Tracked Topics in Profound"
+sidebarTitle: "Categories"
+description: "Manage categories in Profound: list, retrieve assets, prompts, tags, and topics. Categories organize AI tracking by product line or competitive topic."
+---
+
+Categories are the organizational backbone of your AI tracking setup. Each category represents a product line, topic area, or competitive space — for example, "Cloud Storage", "CRM Software", or "Competitor Analysis". Within a category you define the prompts Profound uses to query AI assistants, assign the personas who ask them, and group the assets whose citations you want to measure. This page covers all category sub-endpoints.
+
+---
+
+## List categories
+
+Returns all categories configured for your organization.
+
+### Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/categories
+```
+
+### Query parameters
+
+<ParamField query="organization_id" type="string">
+  Filter categories to a specific organization. Recommended when your key accesses multiple organizations.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Maximum number of category records per page. Accepted range: `1`–`200`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from a previous response's `pagination.next_cursor`.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/categories?organization_id=org_01hx9k2m3n4p5q6r7s8t9u0v" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const response = await client.organizations.categories.list({
+  organization_id: "org_01hx9k2m3n4p5q6r7s8t9u0v",
+});
+console.log(response.categories);
+```
+
+```python Python
+import profound
+
+client = profound.Profound(api_key="<PROFOUND_API_KEY>")
+
+response = client.organizations.categories.list(
+    organization_id="org_01hx9k2m3n4p5q6r7s8t9u0v",
+)
+print(response.categories)
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="categories" type="array">
+  <Expandable title="Category fields">
+    <ResponseField name="id" type="string">
+      Unique category identifier. Pass this as `categoryID` to all sub-endpoints below.
+    </ResponseField>
+    <ResponseField name="organization_id" type="string">
+      The ID of the owning organization.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name (e.g. `"Cloud Storage"`, `"Competitive: Salesforce"`).
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Optional prose description of what this category tracks.
+    </ResponseField>
+    <ResponseField name="prompt_count" type="integer">
+      Number of prompts currently active in this category.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 creation timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Cursor-based pagination metadata. See the [overview](/api-reference/overview#pagination).
+</ResponseField>
+
+---
+
+## Get category assets
+
+Returns the tracked URLs assigned to a category.
+
+### Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/categories/{categoryID}/assets
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category whose assets you want to retrieve.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/assets" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.assets(
+  "cat_01hx9k2m3n4p5q6r7s8"
+);
+console.log(response.assets);
+```
+
+```python Python
+response = client.organizations.categories.assets("cat_01hx9k2m3n4p5q6r7s8")
+print(response.assets)
+```
+</CodeGroup>
+
+### Response
+
+Returns a `CategoryAssetsResponse` with an `assets` array. Each asset object matches the [Asset fields](/api-reference/organizations/assets#response) described on the Assets page.
+
+---
+
+## List prompts
+
+Returns prompts defined within a category, with optional filtering.
+
+### Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/categories/{categoryID}/prompts
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category to fetch prompts from.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="status" type="string">
+  Filter by prompt status. Accepted values: `active`, `paused`, `draft`.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Return only prompts assigned to a specific persona.
+</ParamField>
+
+<ParamField query="tag_id" type="string">
+  Filter prompts by a specific tag ID.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Maximum records per page. Accepted range: `1`–`200`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from the previous response.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/prompts?status=active" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.prompts(
+  "cat_01hx9k2m3n4p5q6r7s8",
+  { status: "active", persona_id: "per_01hx9k2m3n4p5q6r7s8t9u0v" }
+);
+console.log(response.prompts);
+```
+
+```python Python
+response = client.organizations.categories.prompts(
+    "cat_01hx9k2m3n4p5q6r7s8",
+    status="active",
+    persona_id="per_01hx9k2m3n4p5q6r7s8t9u0v",
+)
+print(response.prompts)
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="prompts" type="array">
+  <Expandable title="Prompt fields">
+    <ResponseField name="id" type="string">
+      Unique prompt identifier.
+    </ResponseField>
+    <ResponseField name="category_id" type="string">
+      The category this prompt belongs to.
+    </ResponseField>
+    <ResponseField name="text" type="string">
+      The prompt text sent to AI models (e.g. `"What is the best cloud storage solution for enterprises?"`).
+    </ResponseField>
+    <ResponseField name="persona_id" type="string | null">
+      The ID of the persona used to frame this prompt, if assigned.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      One of `active`, `paused`, or `draft`.
+    </ResponseField>
+    <ResponseField name="tags" type="array of strings">
+      Labels applied to this prompt for grouping and filtering.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 creation timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Cursor-based pagination metadata.
+</ResponseField>
+
+---
+
+## Create prompts
+
+Adds one or more new prompts to a category in a single request.
+
+### Endpoint
+
+```
+POST https://api.tryprofound.com/v1/organizations/categories/{categoryID}/prompts
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category to add prompts to.
+</ParamField>
+
+### Request body
+
+<ParamField body="prompts" type="array" required>
+  An array of prompt objects to create.
+
+  <Expandable title="Prompt creation fields">
+    <ParamField body="text" type="string" required>
+      The prompt text that will be sent to AI models.
+    </ParamField>
+    <ParamField body="type" type="string">
+      The prompt type, used to categorize the nature of the query (e.g. `"awareness"`, `"consideration"`, `"decision"`).
+    </ParamField>
+    <ParamField body="tags" type="array of strings">
+      Optional tag labels for organizing and filtering prompts.
+    </ParamField>
+    <ParamField body="topics" type="array of strings">
+      Optional topic IDs to associate with this prompt for topic-level reporting.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl -X POST "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/prompts" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompts": [
+      {
+        "text": "What is the best cloud storage for enterprise teams?",
+        "type": "awareness",
+        "tags": ["awareness", "enterprise"],
+        "topics": ["top_01hx9k2m3n4p5q6r7s8"]
+      }
+    ]
+  }'
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.createPrompts(
+  "cat_01hx9k2m3n4p5q6r7s8",
+  {
+    prompts: [
+      {
+        text: "What is the best cloud storage for enterprise teams?",
+        type: "awareness",
+        tags: ["awareness", "enterprise"],
+        topics: ["top_01hx9k2m3n4p5q6r7s8"],
+      },
+    ],
+  }
+);
+console.log(response.prompts);
+```
+
+```python Python
+response = client.organizations.categories.create_prompts(
+    "cat_01hx9k2m3n4p5q6r7s8",
+    prompts=[
+        {
+            "text": "What is the best cloud storage for enterprise teams?",
+            "type": "awareness",
+            "tags": ["awareness", "enterprise"],
+            "topics": ["top_01hx9k2m3n4p5q6r7s8"],
+        }
+    ],
+)
+print(response.prompts)
+```
+</CodeGroup>
+
+### Response
+
+Returns `201 Created` and a `CategoryCreatePromptsResponse` containing the newly created `prompts` array with all server-assigned fields (ID, timestamps) populated.
+
+<Tip>
+  You can create up to 100 prompts per request. For bulk imports above that threshold, batch your requests and wait for each to complete before sending the next.
+</Tip>
+
+---
+
+## Update prompts
+
+Updates the text, persona, tags, or status of existing prompts within a category.
+
+### Endpoint
+
+```
+PATCH https://api.tryprofound.com/v1/organizations/categories/{categoryID}/prompts
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category containing the prompts to update.
+</ParamField>
+
+### Request body
+
+<ParamField body="prompts" type="array" required>
+  An array of partial prompt objects. Each must include `id`.
+
+  <Expandable title="Prompt update fields">
+    <ParamField body="id" type="string" required>
+      The ID of the prompt to update.
+    </ParamField>
+    <ParamField body="text" type="string">
+      Revised prompt text. Changing prompt text will reset any cached response data for this prompt.
+    </ParamField>
+    <ParamField body="type" type="string">
+      Updated prompt type (e.g. `"awareness"`, `"consideration"`, `"decision"`).
+    </ParamField>
+    <ParamField body="tags" type="array of strings">
+      Replaces the full tag list. To remove all tags, pass an empty array `[]`.
+    </ParamField>
+    <ParamField body="topics" type="array of strings">
+      Replaces the topic ID list associated with this prompt.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl -X PATCH "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/prompts" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompts": [
+      {
+        "id": "pmt_01hx9k2m3n4p5q6r7s8t9u0z",
+        "text": "Which enterprise cloud storage platforms offer the best security?",
+        "type": "consideration",
+        "tags": ["security", "enterprise"],
+        "topics": ["top_01hx9k2m3n4p5q6r7s8"]
+      }
+    ]
+  }'
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.updatePrompts(
+  "cat_01hx9k2m3n4p5q6r7s8",
+  {
+    prompts: [
+      {
+        id: "pmt_01hx9k2m3n4p5q6r7s8t9u0z",
+        text: "Which enterprise cloud storage platforms offer the best security?",
+        type: "consideration",
+        tags: ["security", "enterprise"],
+        topics: ["top_01hx9k2m3n4p5q6r7s8"],
+      },
+    ],
+  }
+);
+```
+
+```python Python
+response = client.organizations.categories.update_prompts(
+    "cat_01hx9k2m3n4p5q6r7s8",
+    prompts=[
+        {
+            "id": "pmt_01hx9k2m3n4p5q6r7s8t9u0z",
+            "text": "Which enterprise cloud storage platforms offer the best security?",
+            "type": "consideration",
+            "tags": ["security", "enterprise"],
+            "topics": ["top_01hx9k2m3n4p5q6r7s8"],
+        }
+    ],
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns `200 OK` and a `CategoryUpdatePromptsResponse` with the updated prompt objects.
+
+---
+
+## Update prompt status
+
+Activates, pauses, or drafts one or more prompts. This is the preferred method for bulk status changes without modifying other prompt fields.
+
+### Endpoint
+
+```
+PATCH https://api.tryprofound.com/v1/organizations/categories/{categoryID}/prompts/status
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category whose prompt statuses you want to update.
+</ParamField>
+
+### Request body
+
+<ParamField body="prompt_ids" type="array of strings" required>
+  The IDs of the prompts to update.
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  The new status for all specified prompts. Accepted values: `active`, `paused`, `draft`.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl -X PATCH "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/prompts/status" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt_ids": [
+      "pmt_01hx9k2m3n4p5q6r7s8t9u0z",
+      "pmt_01hx9k2m3n4p5q6r7s8t9u0y"
+    ],
+    "status": "paused"
+  }'
+```
+
+```typescript TypeScript
+await client.organizations.categories.updatePromptStatus(
+  "cat_01hx9k2m3n4p5q6r7s8",
+  {
+    prompt_ids: [
+      "pmt_01hx9k2m3n4p5q6r7s8t9u0z",
+      "pmt_01hx9k2m3n4p5q6r7s8t9u0y",
+    ],
+    status: "paused",
+  }
+);
+```
+
+```python Python
+client.organizations.categories.update_prompt_status(
+    "cat_01hx9k2m3n4p5q6r7s8",
+    prompt_ids=[
+        "pmt_01hx9k2m3n4p5q6r7s8t9u0z",
+        "pmt_01hx9k2m3n4p5q6r7s8t9u0y",
+    ],
+    status="paused",
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns `200 OK` and a `CategoryUpdatePromptStatusResponse` confirming the IDs and new status.
+
+<Note>
+  Pausing a prompt stops Profound from running it in future scheduled crawls, but preserves all historical answer data. You can reactivate it at any time by setting `status` back to `active`.
+</Note>
+
+---
+
+## Get category personas
+
+Returns the personas assigned to a category. These are the audience profiles Profound uses when running prompts within this category.
+
+### Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/categories/{categoryID}/personas
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category whose personas you want to retrieve.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/personas" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.getCategoryPersonas(
+  "cat_01hx9k2m3n4p5q6r7s8"
+);
+console.log(response.personas);
+```
+
+```python Python
+response = client.organizations.categories.get_category_personas(
+    "cat_01hx9k2m3n4p5q6r7s8"
+)
+print(response.personas)
+```
+</CodeGroup>
+
+### Response
+
+Returns a `CategoryGetCategoryPersonasResponse` with a `personas` array. Each persona object matches the [Persona fields](/api-reference/organizations/personas#response) described on the Personas page.
+
+---
+
+## Get category tags
+
+Returns all tags applied to prompts within a category. Use tags to group related prompts for filtered reporting.
+
+### Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/categories/{categoryID}/tags
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category whose tags you want to list.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/tags" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.tags(
+  "cat_01hx9k2m3n4p5q6r7s8"
+);
+console.log(response.tags);
+```
+
+```python Python
+response = client.organizations.categories.tags("cat_01hx9k2m3n4p5q6r7s8")
+print(response.tags)
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="tags" type="array">
+  <Expandable title="Tag fields">
+    <ResponseField name="name" type="string">
+      The tag label as applied to prompts (e.g. `"awareness"`, `"competitive"`, `"bottom-of-funnel"`).
+    </ResponseField>
+    <ResponseField name="prompt_count" type="integer">
+      Number of prompts in this category currently carrying this tag.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Get category topics
+
+Returns the topics extracted from AI model responses within a category. Topics are Profound-generated clusters of subject matter surfaced across prompt answers.
+
+### Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/categories/{categoryID}/topics
+```
+
+### Path parameters
+
+<ParamField path="categoryID" type="string" required>
+  The ID of the category whose topics you want to retrieve.
+</ParamField>
+
+### Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/categories/cat_01hx9k2m3n4p5q6r7s8/topics" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+const response = await client.organizations.categories.topics(
+  "cat_01hx9k2m3n4p5q6r7s8"
+);
+console.log(response.topics);
+```
+
+```python Python
+response = client.organizations.categories.topics("cat_01hx9k2m3n4p5q6r7s8")
+print(response.topics)
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="topics" type="array">
+  <Expandable title="Topic fields">
+    <ResponseField name="id" type="string">
+      Unique topic identifier.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The topic label as surfaced by Profound's analysis (e.g. `"Data Security"`, `"Pricing Transparency"`).
+    </ResponseField>
+    <ResponseField name="mention_count" type="integer">
+      Number of times this topic appeared across AI model responses in the category.
+    </ResponseField>
+    <ResponseField name="sentiment_score" type="number | null">
+      Average sentiment score for mentions of this topic, from `-1.0` (very negative) to `1.0` (very positive). `null` if insufficient data.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Topics are a powerful signal for content strategy. High-mention topics with low sentiment scores are prime candidates for content improvement — AI assistants are discussing the subject frequently but representing it negatively.
+</Tip>

@@ -1,0 +1,200 @@
+---
+title: "Organizations: Managing Your Brand in Profound"
+sidebarTitle: "Organizations"
+description: "Organizations are the top-level workspace in Profound, grouping your brand's domains, assets, personas, regions, and tracked AI models into one place."
+---
+
+An **organization** is the top-level container in Profound that represents your brand or company. Everything you track—your web properties, the AI models you monitor, the regions you care about, and the buyer profiles you simulate—lives within an organization. When you log into Profound, you're always working inside an organization.
+
+## What an Organization Contains
+
+Your organization ties together five core building blocks: domains, assets, personas, regions, and models. Together, these define the *scope* of your AI visibility tracking—what properties you own, who's searching, where they're searching from, and which AI assistants you're watching.
+
+<CardGroup cols={2}>
+  <Card title="Domains" icon="globe" href="/api-reference/organizations/domains">
+    The web properties Profound watches for citations across AI responses.
+  </Card>
+  <Card title="Assets" icon="link" href="/api-reference/organizations/assets">
+    Individual URLs within your domains, each tracked for AI citation frequency.
+  </Card>
+  <Card title="Personas" icon="users" href="/concepts/personas">
+    Simulated buyer profiles that send prompts from different audience perspectives.
+  </Card>
+  <Card title="Regions" icon="map-pin" href="/api-reference/organizations/regions">
+    Geographic markets used to scope prompts and localize AI responses.
+  </Card>
+  <Card title="Models" icon="robot" href="/api-reference/organizations/models">
+    The AI assistants—ChatGPT, Perplexity, Bing, Google AI, and more—that Profound queries.
+  </Card>
+  <Card title="Categories" icon="tag" href="/concepts/categories">
+    Tracked topics, product lines, or competitive segments within your organization.
+  </Card>
+</CardGroup>
+
+## Domains
+
+Domains are the web properties associated with your brand that Profound monitors for citation activity. When an AI assistant includes a link or references content from your site in a response, Profound records that citation against the matching domain.
+
+<Note>
+  You can track multiple domains per organization—useful if your brand operates
+  across several websites, regional subdomains, or product microsites.
+</Note>
+
+### Domain Fields
+
+<ResponseField name="domain" type="string" required>
+  The root domain or subdomain being tracked (e.g., `acme.com` or `shop.acme.com`).
+</ResponseField>
+
+<ResponseField name="organizationId" type="string" required>
+  The ID of the organization this domain belongs to.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the domain was added to the organization.
+</ResponseField>
+
+## Assets
+
+Assets are the individual URLs within your tracked domains that Profound monitors for AI citation frequency. While a domain gives you a high-level view of how often your site appears in AI responses, assets let you drill down to which specific pages are being cited—your homepage, a product page, a key blog post, or a help article.
+
+<Tip>
+  Prioritize adding assets for pages you actively want AI assistants to cite, such as product landing pages, comparison guides, and authoritative content pieces.
+</Tip>
+
+### Asset Fields
+
+<ResponseField name="assetId" type="string" required>
+  Unique identifier for the asset.
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  The full URL of the page being tracked (e.g., `https://acme.com/products/crm`).
+</ResponseField>
+
+<ResponseField name="domain" type="string" required>
+  The parent domain this asset belongs to.
+</ResponseField>
+
+<ResponseField name="citationCount" type="number">
+  The total number of times this URL has been cited in captured AI answers.
+</ResponseField>
+
+<ResponseField name="lastCitedAt" type="string">
+  ISO 8601 timestamp of the most recent citation of this asset.
+</ResponseField>
+
+## Personas
+
+Personas are simulated buyer or user profiles attached to your organization. They give prompts a human context—age, location, job role, research behavior—so that Profound can query AI assistants the way a real customer would. Because AI responses vary depending on who's asking, personas are critical for capturing the full range of answers your audience might receive.
+
+See [Personas](/concepts/personas) for a full breakdown of persona fields and configuration.
+
+## Regions
+
+Regions define the geographic markets in which your prompts are run. AI assistants can return different results based on where a query originates—local business recommendations, region-specific regulations, and language preferences all affect responses.
+
+<ResponseField name="regionId" type="string" required>
+  Unique identifier for the region.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Human-readable region name (e.g., `United States`, `United Kingdom`, `DACH`).
+</ResponseField>
+
+<ResponseField name="locale" type="string">
+  BCP 47 locale code associated with this region (e.g., `en-US`, `de-DE`).
+</ResponseField>
+
+## Models
+
+Models are the AI assistants that Profound queries when running your prompts. Each model may return different answers, cite different sources, and express different sentiment—so tracking across multiple models gives you a complete picture of your brand's AI visibility.
+
+Supported models include ChatGPT, Perplexity, Bing Copilot, and Google AI Overview, with additional models added as the AI landscape evolves.
+
+<Warning>
+  Citation and sentiment metrics are model-specific. A high visibility score on
+  Perplexity doesn't guarantee the same result on ChatGPT. Always review
+  per-model breakdowns before drawing conclusions.
+</Warning>
+
+<ResponseField name="modelId" type="string" required>
+  Unique identifier for the AI model.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Display name of the model (e.g., `ChatGPT`, `Perplexity`, `Bing Copilot`).
+</ResponseField>
+
+<ResponseField name="provider" type="string" required>
+  The company or service that operates the model (e.g., `OpenAI`, `Microsoft`, `Google`).
+</ResponseField>
+
+## Fetching Organization Data
+
+Use the Profound TypeScript SDK to retrieve your organization details and assets programmatically.
+
+<CodeGroup>
+
+```typescript List Organizations
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const organizations = await client.organizations.list();
+
+for (const org of organizations) {
+  console.log(`${org.name} — ID: ${org.organizationId}`);
+}
+```
+
+```typescript List Organization Assets
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+// Retrieve the organization ID from client.organizations.list() first
+const organizations = await client.organizations.list();
+const orgId = organizations[0].organizationId;
+
+// Then fetch assets scoped to that organization via the API
+const response = await fetch(
+  `https://api.tryprofound.com/v1/organizations/${orgId}/assets`,
+  { headers: { Authorization: `Bearer ${process.env.PROFOUND_API_KEY}` } }
+);
+const assets = await response.json();
+
+for (const asset of assets) {
+  console.log(`${asset.url} — Citations: ${asset.citationCount}`);
+}
+```
+
+```typescript List Categories
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const categories = await client.organizations.categories.list();
+
+for (const category of categories) {
+  console.log(`${category.name} — ${category.promptCount} prompts`);
+}
+```
+
+</CodeGroup>
+
+## What's Next
+
+With your organization configured, you're ready to structure your tracking with categories and start running prompts.
+
+<CardGroup cols={2}>
+  <Card title="Categories" icon="tag" href="/concepts/categories">
+    Organize your AI tracking by product line, topic, or competitive segment.
+  </Card>
+  <Card title="Personas" icon="users" href="/concepts/personas">
+    Configure buyer profiles to query AI assistants from different perspectives.
+  </Card>
+  <Card title="Prompts & Answers" icon="message-circle" href="/concepts/prompts-and-answers">
+    Learn how Profound sends queries to AI models and captures responses.
+  </Card>
+</CardGroup>

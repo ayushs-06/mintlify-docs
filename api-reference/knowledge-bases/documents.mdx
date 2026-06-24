@@ -1,0 +1,250 @@
+---
+title: "Knowledge Base Documents — Add, Update, and Remove Files"
+sidebarTitle: "Documents"
+description: "Add, update, and delete documents in a Profound knowledge base. Documents are indexed for search and used by AI agents and content analysis."
+---
+
+Documents are the core content units inside a Profound knowledge base. When you add a document, Profound indexes it for semantic search so your AI agents can retrieve relevant chunks at runtime. You can attach custom metadata to each document for filtering, organize documents into folders, and update or remove them as your content evolves.
+
+## Add a Document
+
+Upload a new document to a knowledge base. The content is processed and indexed asynchronously — the document will appear in search results once indexing completes.
+
+### Parameters
+
+<ParamField path="knowledgeBaseID" type="string" required>
+  The unique identifier of the knowledge base to add the document to.
+</ParamField>
+
+<ParamField body="content" type="string" required>
+  The raw text content of the document. Plain text, Markdown, and HTML are all supported.
+</ParamField>
+
+<ParamField body="filename" type="string">
+  An optional filename for the document (e.g., `"return-policy.md"`). Used for display and reference purposes.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional key-value metadata to attach to the document. Use metadata to filter documents at search time or to store source identifiers.
+</ParamField>
+
+<Note>
+  Document indexing is asynchronous. The create endpoint returns immediately with the document ID, but the document may not be immediately searchable. Allow a few seconds for indexing to complete.
+</Note>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/knowledge-bases/kb_abc123/documents" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "content": "Our return policy allows returns within 30 days of purchase with a valid receipt.",
+    "filename": "return-policy.md",
+    "metadata": { "team": "support", "version": "2025-01" }
+  }'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const document = await client.knowledgeBases.documents.create("kb_abc123", {
+  content:
+    "Our return policy allows returns within 30 days of purchase with a valid receipt.",
+  filename: "return-policy.md",
+  metadata: { team: "support", version: "2025-01" },
+});
+
+console.log(document.id);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+document = client.knowledge_bases.documents.create(
+    "kb_abc123",
+    content="Our return policy allows returns within 30 days of purchase with a valid receipt.",
+    filename="return-policy.md",
+    metadata={"team": "support", "version": "2025-01"},
+)
+
+print(document.id)
+```
+
+</CodeGroup>
+
+## Update a Document
+
+Update the content or metadata of an existing document. The document is re-indexed after update.
+
+### Parameters
+
+<ParamField path="knowledgeBaseID" type="string" required>
+  The knowledge base containing the document to update.
+</ParamField>
+
+<ParamField body="document_id" type="string" required>
+  The unique identifier of the document to update.
+</ParamField>
+
+<ParamField body="content" type="string">
+  Replacement content for the document. If provided, the document is fully re-indexed with this new content.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Replacement metadata for the document. This overwrites all existing metadata fields.
+</ParamField>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request PATCH \
+  --url "https://api.profound.ai/v1/knowledge-bases/kb_abc123/documents" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "document_id": "doc_xyz789",
+    "content": "Updated return policy: returns accepted within 60 days.",
+    "metadata": { "team": "support", "version": "2025-06" }
+  }'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const updated = await client.knowledgeBases.documents.update("kb_abc123", {
+  document_id: "doc_xyz789",
+  content: "Updated return policy: returns accepted within 60 days.",
+  metadata: { team: "support", version: "2025-06" },
+});
+
+console.log(updated);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+updated = client.knowledge_bases.documents.update(
+    "kb_abc123",
+    document_id="doc_xyz789",
+    content="Updated return policy: returns accepted within 60 days.",
+    metadata={"team": "support", "version": "2025-06"},
+)
+
+print(updated)
+```
+
+</CodeGroup>
+
+## Delete a Document
+
+Permanently remove a document from a knowledge base. The document is removed from the search index immediately.
+
+### Parameters
+
+<ParamField path="knowledgeBaseID" type="string" required>
+  The knowledge base containing the document to delete.
+</ParamField>
+
+<ParamField body="document_id" type="string" required>
+  The unique identifier of the document to delete.
+</ParamField>
+
+<Warning>
+  Document deletion is permanent and cannot be undone. Ensure you no longer need the document before calling this endpoint.
+</Warning>
+
+### Code Examples
+
+<CodeGroup>
+
+```bash curl
+curl --request DELETE \
+  --url "https://api.profound.ai/v1/knowledge-bases/kb_abc123/documents" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"document_id": "doc_xyz789"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+await client.knowledgeBases.documents.delete("kb_abc123", {
+  document_id: "doc_xyz789",
+});
+
+console.log("Document deleted.");
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+client.knowledge_bases.documents.delete(
+    "kb_abc123",
+    document_id="doc_xyz789",
+)
+
+print("Document deleted.")
+```
+
+</CodeGroup>
+
+## Response Fields
+
+### Create / Update Response
+
+<ResponseField name="id" type="string">
+  The unique identifier of the document.
+</ResponseField>
+
+<ResponseField name="knowledge_base_id" type="string">
+  The ID of the knowledge base this document belongs to.
+</ResponseField>
+
+<ResponseField name="filename" type="string">
+  The display filename of the document.
+</ResponseField>
+
+<ResponseField name="folder_id" type="string">
+  The folder the document is placed in, if any.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  The custom metadata attached to the document.
+</ResponseField>
+
+<ResponseField name="indexing_status" type="string">
+  Current indexing state: `"pending"`, `"indexing"`, or `"indexed"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the document was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of the last update.
+</ResponseField>
+
+### Delete Response
+
+A successful delete returns an HTTP `204 No Content` response with an empty body.

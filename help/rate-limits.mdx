@@ -1,0 +1,98 @@
+---
+title: "Profound API Rate Limits, Headers, and Backoff Guide"
+sidebarTitle: "Rate Limits"
+description: "Understand Profound API rate limits, how to read rate limit headers, and implement exponential backoff to keep your integration running smoothly."
+---
+
+The Profound API enforces rate limits to ensure fair usage and reliable performance across all customers. When you send requests too quickly, the API responds with an HTTP **429 Too Many Requests** status. Both SDKs handle this automatically for most use cases, but understanding how rate limits work will help you build integrations that stay within those boundaries from the start.
+
+## How Rate Limiting Works
+
+Every API response includes headers that tell you how many requests you have remaining in the current window and how long to wait if you've been throttled. The key headers to watch are:
+
+| Header | Description |
+|---|---|
+| `X-RateLimit-Remaining` | The number of requests you can still make in the current rate limit window. |
+| `Retry-After` | The number of seconds to wait before sending your next request after receiving a 429. |
+
+When `X-RateLimit-Remaining` reaches zero, your next request will return a `429 RateLimitError`. You should pause until the `Retry-After` interval has elapsed before retrying.
+
+## Reading Rate Limit Headers
+
+You can inspect these headers directly from the SDK to make proactive decisions — for example, slowing down before you hit the wall.
+
+```ts
+// TypeScript — inspect rate limit headers on a successful response
+const response = await client.organizations.categories.list().withResponse();
+
+const remaining = response.response.headers.get("X-RateLimit-Remaining");
+const retryAfter = response.response.headers.get("Retry-After");
+
+console.log(`Requests remaining: ${remaining}`);
+if (Number(remaining) < 10) {
+  console.warn("Approaching rate limit — consider slowing down.");
+}
+```
+
+```python
+# Python — inspect rate limit headers on a successful response
+response = client.organizations.categories.with_raw_response.list()
+
+remaining = response.headers.get("X-RateLimit-Remaining")
+retry_after = response.headers.get("Retry-After")
+
+print(f"Requests remaining: {remaining}")
+if int(remaining or 0) < 10:
+    print("Approaching rate limit — consider slowing down.")
+```
+
+## SDK Automatic Retry with Exponential Backoff
+
+Both SDKs automatically retry `429 RateLimitError` responses using exponential backoff. By default, the SDK makes up to **2 retry attempts** before raising the error to your code. On each retry, the SDK waits progressively longer — and it respects the `Retry-After` header if the API provides one.
+
+You don't need to write any retry logic yourself for the common case. The SDK handles it transparently.
+
+## Configuring Retry Behavior
+
+You can increase or decrease the number of retries by passing the `maxRetries` option (TypeScript) or `max_retries` option (Python) when you create the client. Setting it to `0` disables retries entirely.
+
+```ts
+// TypeScript — configure retries on the client
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+  maxRetries: 3,
+});
+
+// Per-request override
+const categories = await client.organizations.categories.list({
+  maxRetries: 5,
+});
+```
+
+```python
+# Python — configure retries on the client
+client = Profound(max_retries=3)
+
+# Per-request override
+categories = client.organizations.categories.list(max_retries=5)
+```
+
+Per-request overrides are useful when a specific call is more time-sensitive or more likely to be retried safely than others.
+
+## Best Practices for Staying Within Rate Limits
+
+Following these practices will help you avoid 429 errors in the first place:
+
+**Cache responses whenever possible.** Profound's category and prompt data doesn't change on every request. Store results locally and refresh them on a schedule rather than fetching on every user action.
+
+**Batch requests instead of looping.** If you need data for multiple resources, check whether the API offers a batch or list endpoint. Fetching 50 items in one request is always more efficient than 50 individual requests.
+
+**Respect the `Retry-After` header.** When you do receive a 429, wait the full duration specified before retrying. Retrying immediately will only generate more 429s and delay your recovery.
+
+**Smooth out traffic spikes.** If you're running bulk jobs — such as syncing a large number of organizations — introduce a small delay between requests (`setTimeout` / `time.sleep`) to spread the load across the rate limit window.
+
+**Use webhooks or scheduled jobs for polling.** Rather than polling the API in a tight loop, trigger your data fetches on a fixed schedule (e.g., every few minutes) or use Profound's event system when available.
+
+## Need Higher Limits?
+
+If your integration consistently hits rate limits despite following the best practices above, contact the Profound team at [support@tryprofound.com](mailto:support@tryprofound.com). Include your organization ID, a description of your use case, and the approximate request volume you need. The team can discuss higher rate limit tiers for your account.

@@ -1,0 +1,186 @@
+---
+title: "Profound API Authentication: Keys and Access Tokens"
+sidebarTitle: "Authentication"
+description: "Learn how to get your Profound API key, pass it in requests, and handle authentication errors when integrating with the REST API or SDKs."
+---
+
+Every request to the Profound API must be authenticated. Profound uses API keys and access tokens to verify your identity and enforce permissions. This guide walks you through obtaining your credentials, passing them correctly in HTTP requests and SDK calls, and handling the errors that arise when something goes wrong.
+
+## Get your credentials
+
+Profound supports two credential types depending on how you're integrating:
+
+| Credential | Environment variable | When to use |
+|---|---|---|
+| **API key** | `PROFOUND_API_KEY` | Server-side integrations, scripts, and direct API calls where you control the environment. |
+| **Access token** | `PROFOUND_ACCESS_TOKEN` | Short-lived tokens issued via OAuth for user-facing applications where you act on behalf of an end user. |
+
+For most integrations — including backend services, data pipelines, and local development — you will use an **API key**.
+
+### Find your API key
+
+1. Sign in to your Profound workspace at [app.tryprofound.com](https://app.tryprofound.com).
+2. Click your avatar in the top-right corner and open **Settings**.
+3. Navigate to the **API Keys** tab.
+4. Click **Create new key**, give it a descriptive name (e.g., `production-backend`), and confirm.
+5. Copy the key immediately — Profound only displays the full key once.
+
+<Warning>
+  Never hardcode an API key directly in your source code or commit it to version control. Use environment variables or a secrets manager (such as AWS Secrets Manager, HashiCorp Vault, or your CI/CD platform's secrets store) to keep credentials out of your codebase.
+</Warning>
+
+---
+
+## Pass your credentials
+
+### Raw HTTP requests
+
+Include your API key in the `Authorization` header as a Bearer token on every request.
+
+<CodeGroup>
+
+  ```bash cURL
+  curl https://api.tryprofound.com/v1/organizations/categories \
+    -H "Authorization: Bearer $PROFOUND_API_KEY"
+  ```
+
+</CodeGroup>
+
+The same pattern applies for access tokens — substitute `$PROFOUND_ACCESS_TOKEN` for `$PROFOUND_API_KEY` in the header value.
+
+### TypeScript SDK
+
+Pass your API key via the `apiKey` option when constructing the client. If you set the `PROFOUND_API_KEY` environment variable beforehand, you can omit the option entirely — the SDK reads it automatically.
+
+<CodeGroup>
+
+  ```ts TypeScript
+  import Profound from '@profoundai/client';
+
+  // Explicit — useful when loading credentials from a custom config
+  const client = new Profound({
+    apiKey: process.env['PROFOUND_API_KEY'], // reads env var automatically if omitted
+  });
+  ```
+
+</CodeGroup>
+
+To use an access token instead, pass it via the `accessToken` option:
+
+```ts
+import Profound from '@profoundai/client';
+
+const client = new Profound({
+  accessToken: process.env['PROFOUND_ACCESS_TOKEN'],
+});
+```
+
+### Python SDK
+
+Pass your API key via the `api_key` parameter when constructing the client. As with the TypeScript SDK, setting `PROFOUND_API_KEY` in your environment means you can omit the argument entirely.
+
+<CodeGroup>
+
+  ```python Python
+  import os
+  from profound import Profound
+
+  # Explicit — useful when loading credentials from a custom config
+  client = Profound(
+      api_key=os.environ.get("PROFOUND_API_KEY"),  # reads env var automatically if omitted
+  )
+  ```
+
+</CodeGroup>
+
+To use an access token instead, pass it via the `access_token` parameter:
+
+```python
+import os
+from profound import Profound
+
+client = Profound(
+    access_token=os.environ.get("PROFOUND_ACCESS_TOKEN"),
+)
+```
+
+---
+
+## Security best practices
+
+<Warning>
+  Rotate your API keys immediately if you suspect they have been exposed. You can revoke and regenerate keys at any time from the **Settings → API Keys** page in your Profound dashboard.
+</Warning>
+
+Follow these practices to keep your credentials secure:
+
+- **Use environment variables.** Export `PROFOUND_API_KEY` in your shell profile, `.env` file (excluded from version control via `.gitignore`), or your deployment platform's secrets configuration.
+- **Scope keys by environment.** Create separate keys for development, staging, and production so a leaked dev key cannot affect production data.
+- **Apply least privilege.** When Profound introduces scoped API keys, grant each key only the permissions it needs.
+- **Audit key usage.** Review the API key activity log in your dashboard regularly to spot unexpected or unauthorized requests.
+
+<Tip>
+  Use a tool like [dotenv](https://github.com/motdotla/dotenv) (Node.js) or [python-dotenv](https://github.com/theskumar/python-dotenv) (Python) to load a local `.env` file during development without exposing credentials in your code.
+</Tip>
+
+---
+
+## Authentication errors
+
+When a request fails for credential-related reasons, Profound returns one of the following error codes:
+
+| HTTP status | Error type | Meaning |
+|---|---|---|
+| `401` | `AuthenticationError` | The API key or access token is missing, malformed, or has been revoked. Verify the credential and that it is being passed in the `Authorization: Bearer` header. |
+| `403` | `PermissionDeniedError` | The credential is valid but does not have permission to access the requested resource. Check that the key belongs to a workspace member with the required role, or that the token includes the necessary scopes. |
+
+### Handling errors in the SDK
+
+Both SDKs surface authentication errors as typed exceptions you can catch and handle gracefully.
+
+<CodeGroup>
+
+  ```ts TypeScript
+  import Profound, { AuthenticationError, PermissionDeniedError } from '@profoundai/client';
+
+  const client = new Profound({
+    apiKey: process.env['PROFOUND_API_KEY'],
+  });
+
+  try {
+    const categories = await client.organizations.categories.list();
+    console.log(categories);
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      console.error('Invalid or missing API key. Check PROFOUND_API_KEY.');
+    } else if (error instanceof PermissionDeniedError) {
+      console.error('Your key does not have permission to access this resource.');
+    } else {
+      throw error;
+    }
+  }
+  ```
+
+  ```python Python
+  import os
+  from profound import Profound
+  from profound.errors import AuthenticationError, PermissionDeniedError
+
+  client = Profound(
+      api_key=os.environ.get("PROFOUND_API_KEY"),
+  )
+
+  try:
+      categories = client.organizations.categories.list()
+      print(categories)
+  except AuthenticationError:
+      print("Invalid or missing API key. Check PROFOUND_API_KEY.")
+  except PermissionDeniedError:
+      print("Your key does not have permission to access this resource.")
+  ```
+
+</CodeGroup>
+
+<Note>
+  For a complete list of all error types and their HTTP status codes — including `400 BadRequestError`, `404 NotFoundError`, `429 RateLimitError`, and `500 InternalServerError` — see the [Error Handling](/help/errors) guide.
+</Note>

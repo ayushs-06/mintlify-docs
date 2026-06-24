@@ -1,0 +1,184 @@
+---
+title: "Track Your Brand's AI Visibility with Profound API"
+sidebarTitle: "Visibility Tracking"
+description: "Pull visibility reports to measure how often your brand appears in AI-generated answers across ChatGPT, Perplexity, and other AI assistants."
+---
+
+Visibility is the foundation of your AI presence strategy. Profound measures it by running curated prompts across AI assistants and recording how often your brand appears in the responses. The result is a visibility score you can track over time, compare across bots and regions, and use to prioritize your content investments.
+
+## What visibility means
+
+A visibility score represents the percentage of AI-generated responses that mention your brand. When Profound runs a set of prompts—say, "What are the best project management tools?"—it checks whether each response includes your brand name. The score is the share of those responses that do.
+
+High visibility means AI assistants are regularly recommending or referencing your brand. Low visibility signals an opportunity: either the AI models don't have enough information about you, or competitors are crowding you out.
+
+<Note>
+  Visibility scores are calculated across all prompts and bots unless you apply filters. Segment your reports to get a clearer picture of where you're winning and where you're not.
+</Note>
+
+## Pull a basic visibility report
+
+Use `client.reports.visibility()` to fetch visibility data for a date range. The method returns a breakdown of your visibility score across the prompts Profound ran during that period.
+
+<CodeGroup>
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.visibility({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log("Visibility score:", report.score);
+console.log("Total prompts run:", report.total_prompts);
+console.log("Mentions:", report.mention_count);
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.visibility(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print("Visibility score:", report.score)
+print("Total prompts run:", report.total_prompts)
+print("Mentions:", report.mention_count)
+```
+</CodeGroup>
+
+## Filter your report
+
+Raw visibility numbers are useful, but the real insight comes from slicing the data. Profound supports a range of filters so you can isolate the dimensions that matter most to your team.
+
+| Filter | Description |
+|---|---|
+| `bot` | Limit results to a specific AI assistant (e.g., `"chatgpt"`, `"perplexity"`) |
+| `model_id` | Target a specific model version |
+| `region` | Scope results to a geographic region |
+| `persona` | Filter by simulated user persona |
+| `category` | Narrow to a product or content category |
+| `topic` | Focus on a specific topic cluster |
+| `tag` | Filter by custom tag applied to your prompts |
+| `prompt_type` | Segment by prompt format or intent |
+
+<CodeGroup>
+```typescript TypeScript
+const report = await client.reports.visibility({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot: "chatgpt",
+  region: "us",
+  category: "project-management",
+});
+
+console.log("ChatGPT visibility in US:", report.score);
+```
+
+```python Python
+report = client.reports.visibility(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot="chatgpt",
+    region="us",
+    category="project-management",
+)
+
+print("ChatGPT visibility in US:", report.score)
+```
+</CodeGroup>
+
+<Tip>
+  Run the same report with and without a `bot` filter to see whether your visibility gap is concentrated on one AI assistant or spread evenly. This tells you where to focus your optimization effort first.
+</Tip>
+
+## Compare visibility over time
+
+To track trends, pull multiple reports across consecutive date windows and compare the scores. This approach lets you measure the impact of content changes, product launches, or competitive shifts.
+
+<CodeGroup>
+```typescript TypeScript
+const [january, february] = await Promise.all([
+  client.reports.visibility({
+    start_date: "2025-01-01",
+    end_date: "2025-01-31",
+  }),
+  client.reports.visibility({
+    start_date: "2025-02-01",
+    end_date: "2025-02-28",
+  }),
+]);
+
+const delta = february.score - january.score;
+console.log(`Visibility change: ${delta > 0 ? "+" : ""}${delta.toFixed(2)}%`);
+```
+
+```python Python
+import concurrent.futures
+
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    future_jan = executor.submit(
+        client.reports.visibility,
+        start_date="2025-01-01",
+        end_date="2025-01-31",
+    )
+    future_feb = executor.submit(
+        client.reports.visibility,
+        start_date="2025-02-01",
+        end_date="2025-02-28",
+    )
+    january = future_jan.result()
+    february = future_feb.result()
+
+delta = february.score - january.score
+sign = "+" if delta > 0 else ""
+print(f"Visibility change: {sign}{delta:.2f}%")
+```
+</CodeGroup>
+
+## Stream large result sets
+
+When you're pulling visibility data over long date ranges or across many filter combinations, the standard `visibility()` call may take a while to resolve. Use `client.reports.streamVisibility()` to process results as they arrive instead of waiting for the full response.
+
+<CodeGroup>
+```typescript TypeScript
+const stream = await client.reports.streamVisibility({
+  start_date: "2025-01-01",
+  end_date: "2025-03-31",
+  region: "us",
+});
+
+for await (const chunk of stream) {
+  console.log("Received chunk:", chunk);
+}
+```
+
+```python Python
+stream = client.reports.stream_visibility(
+    start_date="2025-01-01",
+    end_date="2025-03-31",
+    region="us",
+)
+
+for chunk in stream:
+    print("Received chunk:", chunk)
+```
+</CodeGroup>
+
+<Note>
+  Streaming is especially useful when building dashboards or pipelines that need to display partial results in real time. It accepts the same filter parameters as the standard `visibility()` method.
+</Note>
+
+## Next steps
+
+Once you have a clear picture of your visibility scores, you can dig deeper into the specific content driving those numbers:
+
+- [Analyze which URLs AI models cite](/guides/citation-analysis) to understand which pages earn the most AI traffic
+- [Measure AI sentiment about your brand](/guides/sentiment-reporting) to see whether the mentions are positive or negative
+- [Optimize your content for AI visibility](/guides/content-optimization) to act on the gaps you've found

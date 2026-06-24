@@ -1,0 +1,178 @@
+---
+title: "List Organization Personas — Profound API Reference"
+sidebarTitle: "Personas"
+description: "GET /organizations/personas returns buyer persona profiles used to query AI assistants from different audience perspectives and segments."
+---
+
+Personas let you simulate how different audience segments interact with AI assistants. Each persona represents a buyer profile — defined by role, industry, intent, and other attributes — and Profound uses it to frame prompts when querying AI models. By running the same prompts through multiple personas, you can see how AI assistants describe your brand differently depending on who is asking. This endpoint returns all personas configured for your organization.
+
+## Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/personas
+```
+
+## Query parameters
+
+<ParamField query="organization_id" type="string">
+  Filter personas to a specific organization. If omitted, all personas across accessible organizations are returned.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Return a single persona by its ID. Useful for confirming a persona's configuration before referencing it in report filters.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Maximum number of persona records per page. Accepted range: `1`–`200`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from a previous response's `pagination.next_cursor`. Omit to start from the first page.
+</ParamField>
+
+## Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/personas?organization_id=org_01hx9k2m3n4p5q6r7s8t9u0v" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+});
+
+const response = await client.organizations.getPersonas({
+  organization_id: "org_01hx9k2m3n4p5q6r7s8t9u0v",
+});
+
+for (const persona of response.personas) {
+  console.log(persona.name, persona.description);
+}
+```
+
+```python Python
+import profound
+
+client = profound.Profound(api_key="<PROFOUND_API_KEY>")
+
+response = client.organizations.get_personas(
+    organization_id="org_01hx9k2m3n4p5q6r7s8t9u0v",
+)
+for persona in response.personas:
+    print(persona.name, persona.description)
+```
+</CodeGroup>
+
+## Response
+
+A successful request returns `200 OK` and an `OrganizationGetPersonasResponse` object.
+
+<ResponseField name="personas" type="array">
+  An array of persona objects configured for your organization.
+
+  <Expandable title="Persona fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the persona. Use this value to filter reports or category prompts by persona.
+    </ResponseField>
+
+    <ResponseField name="organization_id" type="string">
+      The ID of the organization this persona belongs to.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      A short display name for the persona (e.g. `"Enterprise IT Buyer"`, `"SMB Decision Maker"`).
+    </ResponseField>
+
+    <ResponseField name="description" type="string | null">
+      A prose description of the persona's background, goals, and context. Profound uses this when constructing prompt context for AI model queries.
+    </ResponseField>
+
+    <ResponseField name="attributes" type="object">
+      Structured demographic and professional attributes for the persona.
+
+      <Expandable title="Attribute fields">
+        <ResponseField name="role" type="string | null">
+          The job title or role of this persona (e.g. `"VP of Marketing"`).
+        </ResponseField>
+
+        <ResponseField name="industry" type="string | null">
+          The industry sector the persona operates in (e.g. `"Financial Services"`).
+        </ResponseField>
+
+        <ResponseField name="company_size" type="string | null">
+          Company size bracket (e.g. `"50–200 employees"`, `"Enterprise 1000+"`).
+        </ResponseField>
+
+        <ResponseField name="location" type="string | null">
+          Geographic market for this persona, typically matching a region name.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="is_default" type="boolean">
+      `true` if this persona is used as the fallback when no explicit persona is specified in a prompt run.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the persona was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Cursor-based pagination metadata. See the [pagination overview](/api-reference/overview#pagination) for full details.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "personas": [
+    {
+      "id": "per_01hx9k2m3n4p5q6r7s8t9u0v",
+      "organization_id": "org_01hx9k2m3n4p5q6r7s8t9u0v",
+      "name": "Enterprise IT Buyer",
+      "description": "A senior technology decision-maker at a large enterprise evaluating infrastructure vendors.",
+      "attributes": {
+        "role": "VP of Information Technology",
+        "industry": "Financial Services",
+        "company_size": "Enterprise 1000+",
+        "location": "United States"
+      },
+      "is_default": true,
+      "created_at": "2024-01-15T09:00:00Z"
+    },
+    {
+      "id": "per_01hx9k2m3n4p5q6r7s8t9u0w",
+      "organization_id": "org_01hx9k2m3n4p5q6r7s8t9u0v",
+      "name": "SMB Owner",
+      "description": "A small-business owner researching affordable solutions for a growing team.",
+      "attributes": {
+        "role": "Founder & CEO",
+        "industry": "Retail",
+        "company_size": "10–50 employees",
+        "location": "United Kingdom"
+      },
+      "is_default": false,
+      "created_at": "2024-02-10T14:00:00Z"
+    }
+  ],
+  "pagination": {
+    "next_cursor": null,
+    "has_more": false,
+    "total": 2
+  }
+}
+```
+
+<Note>
+  You can assign personas to specific categories so that only relevant audience segments are used when running prompts for a given topic area. See [Categories](/api-reference/organizations/categories) for details on the `getCategoryPersonas` method.
+</Note>
+
+<Tip>
+  Build one persona per meaningful audience segment in your go-to-market motion. Comparing visibility scores across personas reveals which buyer types AI assistants already associate with your brand — and which you need to invest in.
+</Tip>

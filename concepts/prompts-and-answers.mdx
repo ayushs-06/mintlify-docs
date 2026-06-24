@@ -1,0 +1,252 @@
+---
+title: "Prompts and Answers: How Profound Queries AI Models"
+sidebarTitle: "Prompts & Answers"
+description: "Learn how Profound sends prompts to AI bots, captures answers, and uses the data to measure brand visibility, citation rates, and sentiment."
+---
+
+**Prompts** are the questions Profound sends to AI assistants on your behalf, and **answers** are the responses those assistants return. Together, they form the core data loop of Profound's AI visibility tracking: you define the questions your buyers are asking, Profound runs them across models like ChatGPT, Perplexity, Bing Copilot, and Google AI Overview, and then captures, stores, and analyzes every response for brand mentions, citations, and sentiment.
+
+## What Is a Prompt?
+
+A prompt is any question or query that a buyer might type into an AI assistant. Prompts are always written from the buyer's perspective—not your brand's—and they belong to a [category](/concepts/categories) that defines the topic or competitive segment being tracked.
+
+Good prompts reflect the way real people talk to AI assistants. They're conversational, specific enough to return useful answers, and tied to a genuine point in the buyer's research journey.
+
+**Examples of effective prompts:**
+- `"What is the best CRM for a 10-person sales team?"`
+- `"How does Salesforce compare to HubSpot for enterprise companies?"`
+- `"Which payroll software integrates with QuickBooks?"`
+
+<Warning>
+  Avoid writing prompts that mention your brand directly (e.g., "Is Acme CRM
+  good?"). These produce biased answers that don't reflect organic AI
+  visibility. Use competitive and informational framing instead.
+</Warning>
+
+## Prompt Types
+
+Profound classifies prompts by search intent. The type you assign affects how Profound segments your analytics and helps you understand which intent categories drive the most—or least—brand visibility.
+
+<CardGroup cols={2}>
+  <Card title="Informational" icon="circle-info">
+    The buyer is learning about a topic. These prompts often begin with "What is," "How does," or "Why should I." Example: *"What is revenue intelligence software?"*
+  </Card>
+  <Card title="Comparison" icon="arrow-right-left">
+    The buyer is evaluating options side by side. Example: *"Salesforce vs HubSpot: which is better for SMBs?"*
+  </Card>
+  <Card title="Transactional" icon="credit-card">
+    The buyer is close to a purchase decision. Example: *"Best CRM with a free trial for sales teams."*
+  </Card>
+  <Card title="Navigational" icon="compass">
+    The buyer is looking for a specific product or resource. Example: *"HubSpot onboarding documentation."*
+  </Card>
+</CardGroup>
+
+## Prompt Fields
+
+<ResponseField name="promptId" type="string" required>
+  Unique identifier for the prompt.
+</ResponseField>
+
+<ResponseField name="categoryId" type="string" required>
+  The ID of the category this prompt belongs to.
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  The full text of the question sent to AI models.
+</ResponseField>
+
+<ResponseField name="type" type="string" required>
+  Intent classification: `informational`, `comparison`, `transactional`, or `navigational`.
+</ResponseField>
+
+<ResponseField name="status" type="string" required>
+  Lifecycle state of the prompt: `draft`, `active`, or `archived`.
+</ResponseField>
+
+<ResponseField name="tags" type="string[]">
+  Free-form labels for grouping and filtering prompts within a category (e.g., `["competitor-salesforce", "top-of-funnel"]`).
+</ResponseField>
+
+<ResponseField name="topicId" type="string">
+  The ID of the structured topic this prompt is associated with (e.g., `Pricing`, `Integrations`).
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the prompt was created.
+</ResponseField>
+
+## The Prompt Lifecycle
+
+Every prompt moves through a defined lifecycle from creation to analysis.
+
+<Steps>
+  <Step title="Draft">
+    The prompt has been created but is not yet running. Use this state to write, review, and refine your prompt text and metadata before activating it.
+  </Step>
+  <Step title="Active">
+    Profound is actively sending this prompt to the configured AI models on a scheduled cadence. Answers are being captured and analyzed in real time.
+  </Step>
+  <Step title="Analyzed">
+    A completed run cycle has produced at least one captured answer. Profound has scored the answer for visibility, citations, and sentiment. The prompt continues running on schedule.
+  </Step>
+  <Step title="Archived">
+    The prompt is no longer being sent to AI models. Historical answers are preserved and still accessible in your analytics, but no new runs are scheduled.
+  </Step>
+</Steps>
+
+## What Is an Answer?
+
+An answer is the AI assistant's raw response to a prompt, captured by Profound at the moment of query. Profound doesn't just store the text—it parses every answer for the signals that matter to your brand.
+
+### Answer Fields
+
+<ResponseField name="answerId" type="string" required>
+  Unique identifier for the captured answer.
+</ResponseField>
+
+<ResponseField name="promptId" type="string" required>
+  The ID of the prompt that produced this answer.
+</ResponseField>
+
+<ResponseField name="modelId" type="string" required>
+  The ID of the AI model that generated this answer (e.g., `chatgpt-4o`, `perplexity-sonar`).
+</ResponseField>
+
+<ResponseField name="personaId" type="string">
+  The ID of the persona used when the prompt was sent, if applicable.
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  The full raw text of the AI assistant's response.
+</ResponseField>
+
+<ResponseField name="capturedAt" type="string" required>
+  ISO 8601 timestamp of when the answer was retrieved from the AI model.
+</ResponseField>
+
+### Visibility Score
+
+<ResponseField name="visibilityScore" type="number">
+  A 0–100 score representing how prominently your brand is featured in this answer. A score of 0 means your brand was not mentioned; 100 means your brand was the primary or sole recommendation.
+</ResponseField>
+
+### Citations
+
+<ResponseField name="citations" type="object[]">
+  An array of URLs cited in the AI answer. Each citation object includes the URL, the matched domain, and whether it maps to a tracked asset in your organization.
+</ResponseField>
+
+<ResponseField name="citations[].url" type="string">
+  The full URL cited in the answer.
+</ResponseField>
+
+<ResponseField name="citations[].domain" type="string">
+  The root domain of the cited URL.
+</ResponseField>
+
+<ResponseField name="citations[].isTrackedAsset" type="boolean">
+  Whether this URL matches a tracked asset in your organization.
+</ResponseField>
+
+### Sentiment
+
+<ResponseField name="sentiment" type="string">
+  The overall sentiment of the answer toward your brand: `positive`, `neutral`, or `negative`.
+</ResponseField>
+
+<ResponseField name="sentimentScore" type="number">
+  A numeric sentiment score from -1.0 (strongly negative) to 1.0 (strongly positive).
+</ResponseField>
+
+### Accuracy
+
+<ResponseField name="accuracyFlags" type="string[]">
+  A list of factual issues detected in the answer, such as outdated pricing, incorrect feature claims, or misattributed capabilities. Empty if no issues were found.
+</ResponseField>
+
+## Tags and Topics
+
+Tags and topics let you organize prompts within a category so you can slice your answer analytics along the dimensions that matter to your team.
+
+- **Tags** are free-form labels you apply manually. Use them for campaign tracking, competitor names, funnel stage, or any custom grouping.
+- **Topics** are structured thematic groupings (e.g., `Pricing`, `Integrations`, `Security`) that Profound uses to surface patterns across answers at scale.
+
+<Tip>
+  Apply at least one topic to every prompt. Topic-level analytics reveal which
+  subject areas of your category have the strongest—and weakest—AI visibility,
+  so you can prioritize content investment accordingly.
+</Tip>
+
+## Fetching Answers
+
+Use the Profound TypeScript SDK to retrieve captured answers for a prompt and inspect their visibility, citation, and sentiment data.
+
+<CodeGroup>
+
+```typescript Get Answers for a Prompt
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const answers = await client.prompts.answers({
+  promptId: 'pmt_def456',
+  limit: 20,
+});
+
+for (const answer of answers) {
+  console.log(`Model: ${answer.modelId}`);
+  console.log(`Visibility Score: ${answer.visibilityScore}`);
+  console.log(`Sentiment: ${answer.sentiment} (${answer.sentimentScore})`);
+  console.log(`Citations: ${answer.citations.length}`);
+  console.log('---');
+}
+```
+
+```typescript Filter Answers by Model
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const perplexityAnswers = await client.prompts.answers({
+  promptId: 'pmt_def456',
+  modelId: 'perplexity-sonar',
+  limit: 10,
+});
+
+console.log(
+  `Captured ${perplexityAnswers.length} Perplexity answers for this prompt`
+);
+```
+
+```typescript Check for Tracked Asset Citations
+import Profound from '@profoundai/client';
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const answers = await client.prompts.answers({ promptId: 'pmt_def456' });
+
+const answersWithTrackedCitations = answers.filter((a) =>
+  a.citations.some((c) => c.isTrackedAsset)
+);
+
+console.log(
+  `${answersWithTrackedCitations.length} answers cited a tracked asset`
+);
+```
+
+</CodeGroup>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Categories" icon="tag" href="/concepts/categories">
+    Organize prompts into categories by topic, product line, or competitive segment.
+  </Card>
+  <Card title="Personas" icon="users" href="/concepts/personas">
+    Configure buyer profiles to run prompts from different audience perspectives.
+  </Card>
+  <Card title="Organizations" icon="building" href="/concepts/organizations">
+    Understand how prompts and answers fit into the top-level organization model.
+  </Card>
+</CardGroup>

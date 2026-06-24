@@ -1,0 +1,165 @@
+---
+title: "Citations Report — Track AI References to Your Content"
+sidebarTitle: "Citations"
+description: "Retrieve citation reports showing which of your URLs AI assistants reference. Filter by asset, category, bot, and date range to identify content gaps."
+---
+
+The Citations report shows which specific URLs on your domains are referenced (cited) by AI assistants when they answer prompts related to your brand or category. Unlike the Visibility report — which measures mention frequency — the Citations report tells you exactly which pages earn references in AI-generated answers, helping you identify high-performing content and gaps where competitors earn citations instead of you.
+
+## Request
+
+<ParamField query="start_date" type="string" required>
+  Start of the reporting period in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  End of the reporting period in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter by a specific AI assistant name (e.g., `chatgpt`, `perplexity`).
+</ParamField>
+
+<ParamField query="model_id" type="string">
+  Filter by a specific model ID from the [Models](/api-reference/organizations/models) endpoint.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Filter by geographic region. Use IDs from the [Regions](/api-reference/organizations/regions) endpoint.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Filter to a specific category. Use IDs from the [Categories](/api-reference/organizations/categories) endpoint.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Filter by a specific persona to see citations for prompts run from that buyer perspective.
+</ParamField>
+
+<ParamField query="asset_id" type="string">
+  Filter to citations for a specific tracked asset (URL).
+</ParamField>
+
+<ParamField query="tag_id" type="string">
+  Filter to prompts tagged with a specific tag.
+</ParamField>
+
+<ParamField query="topic_id" type="string">
+  Filter to prompts associated with a specific topic.
+</ParamField>
+
+<ParamField query="prompt_type" type="string">
+  Filter by prompt type (e.g., `informational`, `transactional`, `navigational`).
+</ParamField>
+
+## Code examples
+
+<CodeGroup>
+
+```bash curl
+curl "https://api.tryprofound.com/v1/reports/citations?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```ts TypeScript
+import Profound from '@profoundai/client';
+
+const client = new Profound({
+  apiKey: process.env['PROFOUND_API_KEY'],
+});
+
+const citations = await client.reports.citations({
+  start_date: '2024-01-01',
+  end_date: '2024-01-31',
+  // bot_name: 'chatgpt',
+  // category_id: 'cat_abc123',
+});
+console.log(citations);
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(
+    api_key=os.environ.get("PROFOUND_API_KEY"),
+)
+
+citations = client.reports.citations(
+    start_date="2024-01-01",
+    end_date="2024-01-31",
+    # bot_name="chatgpt",
+    # category_id="cat_abc123",
+)
+print(citations)
+```
+
+</CodeGroup>
+
+## Streaming citations
+
+For large date ranges or organizations with many tracked assets, use `streamCitations` to receive results incrementally:
+
+<CodeGroup>
+
+```ts TypeScript
+const stream = await client.reports.streamCitations({
+  start_date: '2024-01-01',
+  end_date: '2024-03-31',
+});
+
+for await (const chunk of stream) {
+  console.log(chunk);
+}
+```
+
+```python Python
+stream = client.reports.stream_citations(
+    start_date="2024-01-01",
+    end_date="2024-03-31",
+)
+
+for chunk in stream:
+    print(chunk)
+```
+
+</CodeGroup>
+
+## Response
+
+<ResponseField name="citations" type="array">
+  List of citation result objects.
+
+  <Expandable title="citation fields">
+    <ResponseField name="asset_id" type="string">
+      ID of the cited asset (URL).
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      The specific URL that was cited by the AI model.
+    </ResponseField>
+    <ResponseField name="citation_count" type="integer">
+      Number of times this URL was cited within the date range.
+    </ResponseField>
+    <ResponseField name="bot_name" type="string">
+      Name of the AI assistant that cited this URL.
+    </ResponseField>
+    <ResponseField name="category_id" type="string">
+      Category the citing prompts belong to.
+    </ResponseField>
+    <ResponseField name="share_of_citations" type="number">
+      This URL's share of all citations in the filtered result set, as a decimal (0–1).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total_citations" type="integer">
+  Total number of citations across all assets in the result set.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor for the next page of results. `null` when no more results exist.
+</ResponseField>
+
+<Tip>
+  Sort results by `citation_count` descending to quickly identify your top-cited pages. Pages with zero citations despite high visibility scores are strong candidates for content optimization. See the [Content Optimization guide](/guides/content-optimization) for next steps.
+</Tip>

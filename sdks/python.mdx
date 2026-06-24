@@ -1,0 +1,257 @@
+---
+title: "Profound Python SDK — Official Python Client Library"
+sidebarTitle: "Python SDK"
+description: "Install and use the official Profound Python SDK to query visibility, citations, and sentiment from Python 3.9+ applications, with sync and async support."
+---
+
+The official Profound Python SDK (`profound`) gives you a clean, typed interface to every Profound API resource — from AI visibility and citation reports to organization management. It ships with both a synchronous client for scripts and web frameworks, and an asynchronous client for `asyncio`-based applications. The SDK is generated with [Stainless](https://stainless.com).
+
+<Note>
+  The Profound Python SDK requires **Python 3.9 or later**.
+</Note>
+
+## Installation
+
+<Steps>
+  <Step title="Install the package">
+    Install the SDK from PyPI using pip:
+
+    ```bash
+    pip install profound
+    ```
+
+    If you plan to use the `aiohttp` HTTP backend for high-concurrency async workloads, install the optional extra instead:
+
+    ```bash
+    pip install 'profound[aiohttp]'
+    ```
+  </Step>
+
+  <Step title="Set your API key">
+    Store your API key in an environment variable. The SDK reads `PROFOUND_API_KEY` automatically, so you never have to pass it in code.
+
+    ```bash
+    export PROFOUND_API_KEY="your-api-key"
+    ```
+
+    <Warning>
+      Never hard-code your API key in source files or commit it to version control. Use environment variables, a `.env` file with `python-dotenv`, or a secrets manager.
+    </Warning>
+
+    For local development, keep your key in a `.env` file and load it with [python-dotenv](https://pypi.org/project/python-dotenv/):
+
+    ```bash .env
+    PROFOUND_API_KEY=your-api-key
+    ```
+
+    ```python
+    from dotenv import load_dotenv
+    load_dotenv()  # reads .env before you instantiate the client
+    ```
+  </Step>
+
+  <Step title="Initialize the client">
+    Import `Profound` and create a client instance. When `api_key` is omitted, the SDK reads `PROFOUND_API_KEY` from your environment automatically.
+
+    ```python
+    import os
+    from profound import Profound
+
+    client = Profound(
+        api_key=os.environ.get("PROFOUND_API_KEY"),
+    )
+    ```
+  </Step>
+</Steps>
+
+## Synchronous Usage
+
+The synchronous `Profound` client works in any standard Python script or web framework (Django, Flask, FastAPI, etc.) without requiring an event loop.
+
+```python
+import os
+from profound import Profound
+
+client = Profound(api_key=os.environ.get("PROFOUND_API_KEY"))
+
+# List organizations
+orgs = client.organizations.list()
+
+# List organization categories
+categories = client.organizations.categories.list()
+
+# Pull a visibility report
+visibility = client.reports.visibility(
+    start_date="2024-01-01",
+    end_date="2024-01-31",
+)
+
+# Pull citation and sentiment reports
+citations = client.reports.citations(start_date="2024-01-01", end_date="2024-01-31")
+sentiment = client.reports.sentiment(start_date="2024-01-01", end_date="2024-01-31")
+```
+
+## Async Usage
+
+For `asyncio`-based applications, import `AsyncProfound` instead. Every method on `AsyncProfound` returns a coroutine you `await` normally.
+
+```python
+import asyncio
+import os
+from profound import AsyncProfound
+
+async def main():
+    client = AsyncProfound(api_key=os.environ.get("PROFOUND_API_KEY"))
+
+    # All methods are awaitable
+    orgs       = await client.organizations.list()
+    categories = await client.organizations.categories.list()
+
+    visibility = await client.reports.visibility(
+        start_date="2024-01-01",
+        end_date="2024-01-31",
+    )
+    print(visibility)
+
+asyncio.run(main())
+```
+
+## Using the aiohttp Backend
+
+By default, `AsyncProfound` uses `httpx` for HTTP. For workloads that need the `aiohttp` connection pool — for example, high-throughput data pipelines — install the `aiohttp` extra and pass `DefaultAioHttpClient` as the `http_client`:
+
+```bash
+pip install 'profound[aiohttp]'
+```
+
+```python
+import asyncio
+import os
+from profound import AsyncProfound, DefaultAioHttpClient
+
+async def main():
+    async with AsyncProfound(
+        api_key=os.environ.get("PROFOUND_API_KEY"),
+        http_client=DefaultAioHttpClient(),
+    ) as client:
+        categories = await client.organizations.categories.list()
+        print(categories)
+
+asyncio.run(main())
+```
+
+Using the client as an async context manager (`async with`) ensures the underlying connection pool is cleanly closed when the block exits.
+
+## Typed Parameters and Response Models
+
+Every method accepts a `TypedDict` for nested parameters, giving you autocompletion and static analysis in editors like VS Code and PyCharm without requiring Pydantic at runtime.
+
+```python
+from profound.types import ReportParams
+
+params: ReportParams = {
+    "start_date": "2024-01-01",
+    "end_date":   "2024-01-31",
+}
+
+visibility = client.reports.visibility(**params)
+```
+
+Response objects are **Pydantic models**, so you can access fields as attributes and validate or serialize them with standard Pydantic tooling:
+
+```python
+visibility = client.reports.visibility(start_date="2024-01-01", end_date="2024-01-31")
+
+# Access fields as attributes
+print(visibility.score)
+
+# Serialize to a dict or JSON
+print(visibility.model_dump())
+print(visibility.model_dump_json())
+```
+
+## Error Handling
+
+The SDK raises typed exceptions for every failure scenario. Import them from the top-level `profound` package.
+
+| Exception class | HTTP status | When it occurs |
+|---|---|---|
+| `BadRequestError` | 400 | Malformed request or invalid parameters |
+| `AuthenticationError` | 401 | Missing or invalid API key |
+| `PermissionDeniedError` | 403 | Your key lacks permission for this resource |
+| `NotFoundError` | 404 | The requested resource does not exist |
+| `UnprocessableEntityError` | 422 | Request is well-formed but semantically invalid |
+| `RateLimitError` | 429 | Too many requests — slow down and retry |
+| `InternalServerError` | 500+ | Profound-side error |
+| `APIConnectionError` | — | Network failure before a response was received |
+| `APIConnectionTimeoutError` | — | Request exceeded the configured timeout |
+
+```python
+import os
+from profound import Profound
+from profound import (
+    APIError,
+    AuthenticationError,
+    RateLimitError,
+    NotFoundError,
+    APIConnectionTimeoutError,
+)
+
+client = Profound(api_key=os.environ.get("PROFOUND_API_KEY"))
+
+try:
+    orgs = client.organizations.list()
+except AuthenticationError:
+    print("Check your PROFOUND_API_KEY — authentication failed.")
+except RateLimitError:
+    print("Rate limit hit. Back off and retry.")
+except NotFoundError:
+    print("Resource not found.")
+except APIConnectionTimeoutError:
+    print("Request timed out. Try increasing the timeout.")
+except APIError as e:
+    # Catch-all for any other API error
+    print(f"API error {e.status_code}: {e.message}")
+```
+
+All `APIError` subclasses expose a `.status_code`, `.message`, and `.headers` property for detailed diagnostics.
+
+## Retries
+
+The SDK automatically retries failed requests on network errors and `429`/`5xx` responses using exponential backoff. The default is **2 retries**. Configure this globally on the client or per-request:
+
+```python
+# Global: apply a custom retry count to all requests
+client = Profound(
+    api_key=os.environ.get("PROFOUND_API_KEY"),
+    max_retries=3,
+)
+
+# Per-request: override the global setting for a single call
+orgs = client.organizations.list(max_retries=0)  # disable retries
+```
+
+## Timeouts
+
+The default request timeout is **60 seconds**. Configure it globally or per-request:
+
+```python
+# Global: shorten the timeout for all requests
+client = Profound(
+    api_key=os.environ.get("PROFOUND_API_KEY"),
+    timeout=20.0,  # seconds
+)
+
+# Per-request: apply a specific timeout to a single call
+visibility = client.reports.visibility(
+    start_date="2024-01-01",
+    end_date="2024-01-31",
+    timeout=5.0,  # seconds
+)
+```
+
+When a request times out, the SDK raises `APIConnectionTimeoutError`.
+
+## API Reference
+
+For a full list of endpoints, request parameters, and response shapes, see the [API Reference](/api-reference).

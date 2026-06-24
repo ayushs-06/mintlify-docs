@@ -1,0 +1,170 @@
+---
+title: "Optimize Your Content for AI Visibility with Profound"
+sidebarTitle: "Content Optimization"
+description: "Profound content optimization surfaces actionable suggestions to improve how AI models represent and cite specific pages on your website."
+---
+
+Knowing that a page is underperforming in AI visibility is only the first step. The harder question is: what do you actually change? Profound's content optimization feature analyzes your individual assets—specific URLs or content groups—and returns concrete, prioritized recommendations for making those pages more likely to be cited and mentioned positively by AI assistants.
+
+## What content optimization does
+
+Profound evaluates each asset against the prompts and bots in your account and identifies gaps between how AI models currently describe the page and how they should. The result is a set of optimization suggestions, each tied to a specific content element—a missing fact, an unclear value proposition, a competitor comparison that needs addressing, or a structural change that would help AI models parse the page more accurately.
+
+<Note>
+  Content optimization suggestions are generated per asset. An asset can be a single URL, a group of related pages, or any content unit you've defined in your Profound account.
+</Note>
+
+## List optimizations for an asset
+
+Use `client.content.optimization.list(assetID)` to fetch all active optimization suggestions for a specific asset. Pass the asset's ID, which you can find in the Profound dashboard or via the assets API.
+
+<CodeGroup>
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const assetID = "asset_abc123";
+
+const optimizations = await client.content.optimization.list(assetID);
+
+for (const item of optimizations.results) {
+  console.log(`[${item.priority}] ${item.title}`);
+  console.log("  Recommendation:", item.recommendation);
+  console.log("  Impact area:", item.impact_area);
+}
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(api_key=os.environ["PROFOUND_API_KEY"])
+
+asset_id = "asset_abc123"
+
+optimizations = client.content.optimization.list(asset_id)
+
+for item in optimizations.results:
+    print(f"[{item.priority}] {item.title}")
+    print(f"  Recommendation: {item.recommendation}")
+    print(f"  Impact area: {item.impact_area}")
+```
+</CodeGroup>
+
+## Retrieve a specific optimization
+
+Once you have a list of optimization IDs, you can fetch the full detail on any individual recommendation using `client.content.optimization.retrieve()`. Pass both the `contentID` (the optimization item's ID) and the `asset_id` to scope the request correctly.
+
+<CodeGroup>
+```typescript TypeScript
+const optimization = await client.content.optimization.retrieve(
+  "opt_xyz789",
+  { asset_id: "asset_abc123" }
+);
+
+console.log("Title:", optimization.title);
+console.log("Priority:", optimization.priority);
+console.log("Recommendation:", optimization.recommendation);
+console.log("Rationale:", optimization.rationale);
+console.log("Example:", optimization.example_content);
+```
+
+```python Python
+optimization = client.content.optimization.retrieve(
+    "opt_xyz789",
+    asset_id="asset_abc123",
+)
+
+print("Title:", optimization.title)
+print("Priority:", optimization.priority)
+print("Recommendation:", optimization.recommendation)
+print("Rationale:", optimization.rationale)
+print("Example:", optimization.example_content)
+```
+</CodeGroup>
+
+<Tip>
+  The `rationale` field explains why Profound flagged this item—typically referencing the specific prompts or bots where the page underperformed. Read it before making changes so you understand the signal behind the suggestion.
+</Tip>
+
+## Act on optimization recommendations
+
+Pulling suggestions programmatically lets you integrate Profound's recommendations into your existing content workflow. Here's a practical pattern for triaging and acting on optimizations at scale.
+
+<Steps>
+  <Step title="List all assets">
+    Start by identifying the assets where you want to improve AI visibility. Focus on high-traffic pages, category landing pages, or pages you know are under-cited based on your [citation analysis](/guides/citation-analysis).
+  </Step>
+  <Step title="Fetch optimizations for each asset">
+    Call `client.content.optimization.list(assetID)` for each asset. Collect results and sort by priority to triage the highest-impact items first.
+  </Step>
+  <Step title="Review the full detail">
+    For any high-priority suggestion, call `client.content.optimization.retrieve()` to get the full rationale and example content. This gives your content team the context they need to make the right change.
+  </Step>
+  <Step title="Implement the changes">
+    Update the page content based on the recommendation. Common changes include adding missing factual statements, improving how your value proposition is expressed, clarifying comparisons, and adding structured data.
+  </Step>
+  <Step title="Measure the impact">
+    After publishing changes, wait at least 14 days and then pull a fresh [visibility report](/guides/visibility-tracking) and [citation report](/guides/citation-analysis) for the same asset. Compare scores before and after to confirm the improvement.
+  </Step>
+</Steps>
+
+The following example shows how to fetch and triage optimizations across multiple assets in a single script:
+
+<CodeGroup>
+```typescript TypeScript
+const assetIDs = ["asset_abc123", "asset_def456", "asset_ghi789"];
+
+const allOptimizations = await Promise.all(
+  assetIDs.map((id) =>
+    client.content.optimization.list(id).then((res) =>
+      res.results.map((item) => ({ ...item, asset_id: id }))
+    )
+  )
+);
+
+const flat = allOptimizations.flat();
+const highPriority = flat.filter((item) => item.priority === "high");
+
+console.log(`Found ${highPriority.length} high-priority optimizations`);
+
+for (const item of highPriority) {
+  console.log(`\nAsset: ${item.asset_id}`);
+  console.log(`Title: ${item.title}`);
+  console.log(`Recommendation: ${item.recommendation}`);
+}
+```
+
+```python Python
+asset_ids = ["asset_abc123", "asset_def456", "asset_ghi789"]
+
+all_optimizations = []
+for asset_id in asset_ids:
+    results = client.content.optimization.list(asset_id)
+    for item in results.results:
+        all_optimizations.append({**item.__dict__, "asset_id": asset_id})
+
+high_priority = [o for o in all_optimizations if o["priority"] == "high"]
+
+print(f"Found {len(high_priority)} high-priority optimizations")
+
+for item in high_priority:
+    print(f"\nAsset: {item['asset_id']}")
+    print(f"Title: {item['title']}")
+    print(f"Recommendation: {item['recommendation']}")
+```
+</CodeGroup>
+
+<Warning>
+  Optimization suggestions reflect the state of AI model behavior at the time they were generated. Re-run your analysis periodically—AI models update frequently, and new optimization opportunities emerge as their training data shifts.
+</Warning>
+
+## Next steps
+
+Content optimization works best as part of a continuous improvement loop:
+
+- [Monitor visibility scores](/guides/visibility-tracking) after publishing changes to confirm your optimizations are having the intended effect
+- [Track citation changes](/guides/citation-analysis) to see if updated pages earn more citations from AI assistants
+- [Check sentiment trends](/guides/sentiment-reporting) to ensure your edits are shifting AI framing in a positive direction
+- [Automate your optimization workflow](/guides/ai-agents) using Profound Agents to run and act on these reports programmatically

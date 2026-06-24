@@ -1,0 +1,688 @@
+---
+title: "Accuracy Reports — Detect Inaccurate AI Claims About You"
+sidebarTitle: "Accuracy"
+description: "Run accuracy reports to detect and analyze inaccurate AI claims about your brand—covering breakdowns, drivers, clusters, themes, and claim-level citations."
+---
+
+The Accuracy Reports suite helps you identify, quantify, and root-cause the inaccurate claims AI assistants make about your brand. From high-level overviews to granular claim-level citations, each method surfaces a different dimension of AI factual accuracy — so you can prioritize corrections, update source content, and track improvement over time.
+
+All accuracy report methods are accessed via `client.reports.accuracy`.
+
+## Available Methods
+
+| Method | Description |
+|---|---|
+| `createOverview` | High-level accuracy score and summary for your brand |
+| `createBreakdown` | Accuracy broken down by category, topic, or bot |
+| `createTopInaccurateClaims` | The most frequently occurring inaccurate claims |
+| `createClaimBreakdown` | Detailed breakdown of a specific claim |
+| `createClaimCitations` | Citations associated with a specific inaccurate claim |
+| `createInaccuracyDrivers` | Root-cause factors driving inaccurate claims |
+| `createInaccurateClusters` | Groups of semantically similar inaccurate claims |
+| `createInaccurateThemes` | High-level themes across inaccurate claims |
+| `createCitationAnalysis` | Analysis of which sources correlate with inaccuracy |
+| `createClusterExampleRuns` | Example AI runs illustrating a cluster of inaccuracies |
+| `createClusterVerificationPairs` | Claim-fact pairs used to verify cluster accuracy |
+| `createFactcheckSetupStatus` | Setup status for fact-checking on your account |
+| `createTopicIds` | Retrieve topic IDs available for accuracy filtering |
+
+<Warning>
+  Accuracy reports require the fact-checking feature to be configured for your account. Call `createFactcheckSetupStatus` to verify your setup before running other accuracy reports.
+</Warning>
+
+## Common Parameters
+
+<ParamField query="start_date" type="string" required>
+  The start of the reporting window in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  The end of the reporting window in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter to a specific AI bot.
+</ParamField>
+
+<ParamField query="topic_id" type="string">
+  Filter to a specific topic. Use `createTopicIds` to retrieve available topic IDs.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Scope to a single prompt category.
+</ParamField>
+
+<ParamField query="cluster_id" type="string">
+  Filter claim-level methods to a specific inaccuracy cluster. Required by `createClusterExampleRuns` and `createClusterVerificationPairs`.
+</ParamField>
+
+<ParamField query="claim_id" type="string">
+  Required by `createClaimBreakdown` and `createClaimCitations` to scope to a single claim.
+</ParamField>
+
+## Code Examples
+
+### Accuracy Overview
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/overview" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const overview = await client.reports.accuracy.createOverview({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(overview);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+overview = client.reports.accuracy.create_overview(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(overview)
+```
+
+</CodeGroup>
+
+### Top Inaccurate Claims
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/top-inaccurate-claims" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const claims = await client.reports.accuracy.createTopInaccurateClaims({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot_name: "chatgpt",
+});
+
+console.log(claims);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+claims = client.reports.accuracy.create_top_inaccurate_claims(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot_name="chatgpt",
+)
+
+print(claims)
+```
+
+</CodeGroup>
+
+### Inaccuracy Drivers
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/inaccuracy-drivers" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const drivers = await client.reports.accuracy.createInaccuracyDrivers({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(drivers);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+drivers = client.reports.accuracy.create_inaccuracy_drivers(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(drivers)
+```
+
+</CodeGroup>
+
+### Fact-Check Setup Status
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/factcheck-setup-status" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const status = await client.reports.accuracy.createFactcheckSetupStatus({});
+
+console.log(status);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+status = client.reports.accuracy.create_factcheck_setup_status()
+
+print(status)
+```
+
+</CodeGroup>
+
+### Accuracy Breakdown
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/breakdown" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const breakdown = await client.reports.accuracy.createBreakdown({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot_name: "chatgpt",
+});
+
+console.log(breakdown);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+breakdown = client.reports.accuracy.create_breakdown(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot_name="chatgpt",
+)
+
+print(breakdown)
+```
+
+</CodeGroup>
+
+### Claim Breakdown
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/claim-breakdown" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31","claim_id":"claim_abc123"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const claimBreakdown = await client.reports.accuracy.createClaimBreakdown({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  claim_id: "claim_abc123",
+});
+
+console.log(claimBreakdown);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+claim_breakdown = client.reports.accuracy.create_claim_breakdown(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    claim_id="claim_abc123",
+)
+
+print(claim_breakdown)
+```
+
+</CodeGroup>
+
+### Claim Citations
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/claim-citations" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31","claim_id":"claim_abc123"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const claimCitations = await client.reports.accuracy.createClaimCitations({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  claim_id: "claim_abc123",
+});
+
+console.log(claimCitations);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+claim_citations = client.reports.accuracy.create_claim_citations(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    claim_id="claim_abc123",
+)
+
+print(claim_citations)
+```
+
+</CodeGroup>
+
+### Inaccurate Clusters
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/inaccurate-clusters" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const clusters = await client.reports.accuracy.createInaccurateClusters({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(clusters);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+clusters = client.reports.accuracy.create_inaccurate_clusters(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(clusters)
+```
+
+</CodeGroup>
+
+### Inaccurate Themes
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/inaccurate-themes" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const themes = await client.reports.accuracy.createInaccurateThemes({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(themes);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+themes = client.reports.accuracy.create_inaccurate_themes(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(themes)
+```
+
+</CodeGroup>
+
+### Citation Analysis
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/citation-analysis" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const citationAnalysis = await client.reports.accuracy.createCitationAnalysis({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(citationAnalysis);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+citation_analysis = client.reports.accuracy.create_citation_analysis(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(citation_analysis)
+```
+
+</CodeGroup>
+
+### Cluster Example Runs
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/cluster-example-runs" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31","cluster_id":"cluster_abc123"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const exampleRuns = await client.reports.accuracy.createClusterExampleRuns({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  cluster_id: "cluster_abc123",
+});
+
+console.log(exampleRuns);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+example_runs = client.reports.accuracy.create_cluster_example_runs(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    cluster_id="cluster_abc123",
+)
+
+print(example_runs)
+```
+
+</CodeGroup>
+
+### Cluster Verification Pairs
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/cluster-verification-pairs" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"start_date":"2025-01-01","end_date":"2025-01-31","cluster_id":"cluster_abc123"}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const verificationPairs = await client.reports.accuracy.createClusterVerificationPairs({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  cluster_id: "cluster_abc123",
+});
+
+console.log(verificationPairs);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+verification_pairs = client.reports.accuracy.create_cluster_verification_pairs(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    cluster_id="cluster_abc123",
+)
+
+print(verification_pairs)
+```
+
+</CodeGroup>
+
+### Topic IDs
+
+<CodeGroup>
+
+```bash curl
+curl --request POST \
+  --url "https://api.profound.ai/v1/reports/accuracy/topic-ids" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{}'
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const topicIds = await client.reports.accuracy.createTopicIds({});
+
+console.log(topicIds);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+topic_ids = client.reports.accuracy.create_topic_ids()
+
+print(topic_ids)
+```
+
+</CodeGroup>
+
+## Response Fields
+
+Response shapes vary by method. The fields below cover common patterns across the accuracy report suite.
+
+<ResponseField name="accuracy_score" type="number">
+  Overall accuracy score for your brand in the reporting window (0–100). Present on `createOverview` and `createBreakdown`.
+</ResponseField>
+
+<ResponseField name="inaccurate_claim_count" type="integer">
+  Total number of inaccurate claims detected. Present on overview and breakdown methods.
+</ResponseField>
+
+<ResponseField name="claims" type="array">
+  List of inaccurate claim records returned by `createTopInaccurateClaims` and `createClaimBreakdown`.
+
+  <Expandable title="claims[]">
+    <ResponseField name="claim_id" type="string">
+      Unique identifier for this claim.
+    </ResponseField>
+
+    <ResponseField name="claim_text" type="string">
+      The text of the inaccurate claim as generated by the AI assistant.
+    </ResponseField>
+
+    <ResponseField name="occurrence_count" type="integer">
+      Number of times this claim appeared across tracked AI responses.
+    </ResponseField>
+
+    <ResponseField name="bot_name" type="string">
+      The AI bot that produced this claim.
+    </ResponseField>
+
+    <ResponseField name="severity" type="string">
+      Severity classification: `"low"`, `"medium"`, or `"high"`.
+    </ResponseField>
+
+    <ResponseField name="topic_id" type="string">
+      Topic associated with this claim.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="clusters" type="array">
+  Groups of semantically similar inaccurate claims. Returned by `createInaccurateClusters`.
+
+  <Expandable title="clusters[]">
+    <ResponseField name="cluster_id" type="string">
+      Unique identifier for the cluster.
+    </ResponseField>
+
+    <ResponseField name="theme" type="string">
+      A short description of the shared inaccuracy theme in this cluster.
+    </ResponseField>
+
+    <ResponseField name="claim_count" type="integer">
+      Number of distinct claims in this cluster.
+    </ResponseField>
+
+    <ResponseField name="example_claim" type="string">
+      A representative example claim from this cluster.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="drivers" type="array">
+  Root-cause drivers behind inaccurate claims. Returned by `createInaccuracyDrivers`.
+
+  <Expandable title="drivers[]">
+    <ResponseField name="driver" type="string">
+      Description of the root-cause driver (e.g., `"outdated training data"`, `"missing source content"`).
+    </ResponseField>
+
+    <ResponseField name="impact_score" type="number">
+      Relative impact of this driver on overall inaccuracy score.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="setup_status" type="object">
+  Fact-check configuration status. Returned by `createFactcheckSetupStatus`.
+
+  <Expandable title="setup_status">
+    <ResponseField name="configured" type="boolean">
+      Whether fact-checking is fully configured for your account.
+    </ResponseField>
+
+    <ResponseField name="missing_steps" type="array">
+      List of setup steps not yet completed, if any.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

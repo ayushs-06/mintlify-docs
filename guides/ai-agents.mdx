@@ -1,0 +1,338 @@
+---
+title: "Automate AI Visibility Workflows with Profound Agents"
+sidebarTitle: "AI Agents"
+description: "Profound agents let you build and run custom AI workflows that can query, analyze, and act on your brand's AI visibility data programmatically."
+---
+
+Pulling reports manually works well for ad-hoc analysis, but most marketing and analytics teams need their visibility data to flow automatically—into dashboards, Slack alerts, CRMs, or content pipelines. Profound Agents let you build those workflows directly on top of the Profound platform. You define the logic, connect the nodes, and run the agent on demand or on a schedule—all through the API.
+
+## What Profound agents are
+
+An agent is a directed workflow made up of **nodes**, where each node represents a specific action or transformation—fetching a report, evaluating a condition, formatting output, or sending data to an external system. You assemble nodes into a graph, publish the agent, and then trigger it via the API whenever you need it to run.
+
+Agents are useful for:
+
+- **Automated reporting** — pull visibility, citation, and sentiment data on a schedule and push it to your data warehouse
+- **Alert pipelines** — detect sentiment drops or visibility changes and trigger notifications
+- **Content workflows** — identify underperforming assets and route optimization tasks to your content team
+- **Competitive monitoring** — run side-by-side comparisons and summarize findings automatically
+
+<Note>
+  Before building an agent, explore the available node types with `client.agents.nodeTypes.list()` to understand what building blocks are available to you.
+</Note>
+
+## List available node types
+
+Node types are the primitives you use to build agents. Start here to see what's available in your account.
+
+<CodeGroup>
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const nodeTypes = await client.agents.nodeTypes.list();
+
+for (const nodeType of nodeTypes.results) {
+  console.log(`${nodeType.name} (${nodeType.id}): ${nodeType.description}`);
+}
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(api_key=os.environ["PROFOUND_API_KEY"])
+
+node_types = client.agents.node_types.list()
+
+for node_type in node_types.results:
+    print(f"{node_type.name} ({node_type.id}): {node_type.description}")
+```
+</CodeGroup>
+
+## List your existing agents
+
+Before creating a new agent, check whether one already exists for your use case. Use `client.agents.list()` to retrieve all agents in your account.
+
+<CodeGroup>
+```typescript TypeScript
+const agents = await client.agents.list();
+
+for (const agent of agents.results) {
+  console.log(`${agent.name} (${agent.id}) — status: ${agent.status}`);
+}
+```
+
+```python Python
+agents = client.agents.list()
+
+for agent in agents.results:
+    print(f"{agent.name} ({agent.id}) — status: {agent.status}")
+```
+</CodeGroup>
+
+## Create an agent
+
+Use `client.agents.create()` to define a new agent. Pass a name, description, and the node configuration that describes your workflow. The exact shape of the `nodes` configuration depends on the node types you're using—refer to your `nodeTypes.list()` output for the available options.
+
+<CodeGroup>
+```typescript TypeScript
+const agent = await client.agents.create({
+  name: "Weekly Visibility Digest",
+  description: "Pulls visibility and sentiment data every Monday and posts a summary to Slack.",
+  nodes: [
+    {
+      type: "visibility_report",
+      id: "node_visibility",
+      config: {
+        lookback_days: 7,
+        filters: { region: "us" },
+      },
+    },
+    {
+      type: "sentiment_report",
+      id: "node_sentiment",
+      config: {
+        lookback_days: 7,
+      },
+    },
+    {
+      type: "slack_notify",
+      id: "node_notify",
+      config: {
+        channel: "#brand-intelligence",
+        template: "weekly_digest",
+      },
+      depends_on: ["node_visibility", "node_sentiment"],
+    },
+  ],
+});
+
+console.log("Agent created:", agent.id);
+```
+
+```python Python
+agent = client.agents.create(
+    name="Weekly Visibility Digest",
+    description="Pulls visibility and sentiment data every Monday and posts a summary to Slack.",
+    nodes=[
+        {
+            "type": "visibility_report",
+            "id": "node_visibility",
+            "config": {
+                "lookback_days": 7,
+                "filters": {"region": "us"},
+            },
+        },
+        {
+            "type": "sentiment_report",
+            "id": "node_sentiment",
+            "config": {"lookback_days": 7},
+        },
+        {
+            "type": "slack_notify",
+            "id": "node_notify",
+            "config": {
+                "channel": "#brand-intelligence",
+                "template": "weekly_digest",
+            },
+            "depends_on": ["node_visibility", "node_sentiment"],
+        },
+    ],
+)
+
+print("Agent created:", agent.id)
+```
+</CodeGroup>
+
+## Update an agent
+
+Agents evolve as your workflows change. Use `client.agents.update()` to modify an existing agent's configuration without deleting and recreating it.
+
+<CodeGroup>
+```typescript TypeScript
+const updated = await client.agents.update("agent_abc123", {
+  name: "Weekly Visibility Digest (v2)",
+  nodes: [
+    {
+      type: "visibility_report",
+      id: "node_visibility",
+      config: {
+        lookback_days: 7,
+        filters: { region: "us", bot: "chatgpt" },
+      },
+    },
+    {
+      type: "slack_notify",
+      id: "node_notify",
+      config: {
+        channel: "#brand-intelligence",
+        template: "weekly_digest",
+      },
+      depends_on: ["node_visibility"],
+    },
+  ],
+});
+
+console.log("Updated agent:", updated.id, "— version:", updated.version);
+```
+
+```python Python
+updated = client.agents.update(
+    "agent_abc123",
+    name="Weekly Visibility Digest (v2)",
+    nodes=[
+        {
+            "type": "visibility_report",
+            "id": "node_visibility",
+            "config": {
+                "lookback_days": 7,
+                "filters": {"region": "us", "bot": "chatgpt"},
+            },
+        },
+        {
+            "type": "slack_notify",
+            "id": "node_notify",
+            "config": {
+                "channel": "#brand-intelligence",
+                "template": "weekly_digest",
+            },
+            "depends_on": ["node_visibility"],
+        },
+    ],
+)
+
+print("Updated agent:", updated.id, "— version:", updated.version)
+```
+</CodeGroup>
+
+<Tip>
+  Update your agent's configuration in draft mode and test it with a manual run before publishing. This way you don't disrupt any scheduled workflows while you're iterating.
+</Tip>
+
+## Publish an agent
+
+An agent must be published before it can be triggered via scheduled or external runs. Use `client.agents.publish()` to promote your agent from draft to active.
+
+<CodeGroup>
+```typescript TypeScript
+const published = await client.agents.publish("agent_abc123");
+
+console.log("Agent status:", published.status); // "active"
+console.log("Published at:", published.published_at);
+```
+
+```python Python
+published = client.agents.publish("agent_abc123")
+
+print("Agent status:", published.status)  # "active"
+print("Published at:", published.published_at)
+```
+</CodeGroup>
+
+<Warning>
+  Publishing replaces the previously active version of the agent immediately. If you have automated runs scheduled, they will pick up the new configuration on their next execution. Test thoroughly before publishing.
+</Warning>
+
+## Run an agent
+
+Trigger an agent run manually or from your own scheduling system using `client.agents.runs.create()`. You can pass run-specific parameters that override or supplement the agent's default configuration.
+
+<CodeGroup>
+```typescript TypeScript
+const run = await client.agents.runs.create("agent_abc123", {
+  parameters: {
+    start_date: "2025-01-01",
+    end_date: "2025-01-31",
+  },
+});
+
+console.log("Run started:", run.id);
+console.log("Status:", run.status); // "pending" or "running"
+```
+
+```python Python
+run = client.agents.runs.create(
+    "agent_abc123",
+    parameters={
+        "start_date": "2025-01-01",
+        "end_date": "2025-01-31",
+    },
+)
+
+print("Run started:", run.id)
+print("Status:", run.status)  # "pending" or "running"
+```
+</CodeGroup>
+
+## Check run status
+
+Agent runs are asynchronous. After kicking off a run, poll `client.agents.runs.retrieve()` to check whether it's completed, failed, or still in progress.
+
+<CodeGroup>
+```typescript TypeScript
+import { setTimeout } from "timers/promises";
+
+async function waitForRun(agentID: string, runID: string) {
+  while (true) {
+    const run = await client.agents.runs.retrieve(runID, {
+      agent_id: agentID,
+    });
+
+    console.log(`Run ${runID} status: ${run.status}`);
+
+    if (run.status === "completed") {
+      console.log("Run output:", run.output);
+      return run;
+    }
+
+    if (run.status === "failed") {
+      console.error("Run failed:", run.error);
+      throw new Error(run.error);
+    }
+
+    // Wait 5 seconds before polling again
+    await setTimeout(5000);
+  }
+}
+
+const run = await client.agents.runs.create("agent_abc123", {});
+await waitForRun("agent_abc123", run.id);
+```
+
+```python Python
+import time
+
+def wait_for_run(agent_id: str, run_id: str):
+    while True:
+        run = client.agents.runs.retrieve(run_id, agent_id=agent_id)
+        print(f"Run {run_id} status: {run.status}")
+
+        if run.status == "completed":
+            print("Run output:", run.output)
+            return run
+
+        if run.status == "failed":
+            raise RuntimeError(f"Run failed: {run.error}")
+
+        # Wait 5 seconds before polling again
+        time.sleep(5)
+
+run = client.agents.runs.create("agent_abc123", parameters={})
+wait_for_run("agent_abc123", run.id)
+```
+</CodeGroup>
+
+<Note>
+  If you're building a production pipeline, consider using exponential backoff when polling for run status to avoid unnecessary API calls on long-running workflows.
+</Note>
+
+## Next steps
+
+Agents become most powerful when they're connected to the rest of your Profound data:
+
+- [Pull visibility data](/guides/visibility-tracking) inside your agent workflow to track brand presence over time
+- [Include citation analysis](/guides/citation-analysis) to surface which pages are gaining or losing AI traffic
+- [Add sentiment monitoring](/guides/sentiment-reporting) to trigger alerts when your brand's AI framing turns negative
+- [Route optimization tasks](/guides/content-optimization) automatically to your content team based on agent output

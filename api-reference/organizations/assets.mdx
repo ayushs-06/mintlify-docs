@@ -1,0 +1,164 @@
+---
+title: "List Organization Assets — Profound REST API Reference"
+sidebarTitle: "Assets"
+description: "GET /organizations/assets — Lists individual URLs tracked for AI citation. Filter by organization or category to narrow results."
+---
+
+Assets are the individual URLs that Profound monitors for AI citations. While domains capture broad web property coverage, assets let you track specific pages — product pages, blog posts, landing pages, documentation — and measure exactly which content AI assistants are referencing. This endpoint returns all assets configured for your organization.
+
+## Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/assets
+```
+
+## Query parameters
+
+<ParamField query="organization_id" type="string">
+  Filter assets to a specific organization. Recommended when your API key has access to multiple organizations.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Return only assets belonging to a particular category. Use this to scope results to a specific product line or topic area.
+</ParamField>
+
+<ParamField query="domain_id" type="string">
+  Narrow results to assets under a specific tracked domain.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Maximum number of asset records per page. Accepted range: `1`–`200`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from a previous response's `pagination.next_cursor`. Omit to fetch the first page.
+</ParamField>
+
+## Code examples
+
+<CodeGroup>
+```bash curl
+curl "https://api.tryprofound.com/v1/organizations/assets?organization_id=org_01hx9k2m3n4p5q6r7s8t9u0v&category_id=cat_01hx9k2m3n4p5q6r7s8" \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+});
+
+const response = await client.organizations.listAssets({
+  organization_id: "org_01hx9k2m3n4p5q6r7s8t9u0v",
+  category_id: "cat_01hx9k2m3n4p5q6r7s8",
+});
+
+for (const asset of response.assets) {
+  console.log(asset.url, asset.citation_count);
+}
+```
+
+```python Python
+import profound
+
+client = profound.Profound(api_key="<PROFOUND_API_KEY>")
+
+response = client.organizations.list_assets(
+    organization_id="org_01hx9k2m3n4p5q6r7s8t9u0v",
+    category_id="cat_01hx9k2m3n4p5q6r7s8",
+)
+for asset in response.assets:
+    print(asset.url, asset.citation_count)
+```
+</CodeGroup>
+
+## Response
+
+A successful request returns `200 OK` and an `OrganizationListAssetsResponse` object.
+
+<ResponseField name="assets" type="array">
+  An array of asset objects tracked for your organization.
+
+  <Expandable title="Asset fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the asset.
+    </ResponseField>
+
+    <ResponseField name="organization_id" type="string">
+      The ID of the organization this asset belongs to.
+    </ResponseField>
+
+    <ResponseField name="domain_id" type="string">
+      The ID of the domain this asset's URL falls under.
+    </ResponseField>
+
+    <ResponseField name="category_id" type="string | null">
+      The ID of the category this asset is assigned to, if any.
+    </ResponseField>
+
+    <ResponseField name="url" type="string">
+      The full URL of the tracked page (e.g. `"https://acme.com/products/widget-pro"`).
+    </ResponseField>
+
+    <ResponseField name="title" type="string | null">
+      The page title as discovered by Profound's crawler, if available.
+    </ResponseField>
+
+    <ResponseField name="citation_count" type="integer">
+      Total number of times this URL has been cited by AI assistants across all tracked prompts in your account's history.
+    </ResponseField>
+
+    <ResponseField name="last_cited_at" type="string | null">
+      ISO 8601 timestamp of the most recent citation of this asset. `null` if the asset has not yet been cited.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the asset was added to Profound.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Cursor-based pagination metadata. See the [pagination overview](/api-reference/overview#pagination) for full details.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "assets": [
+    {
+      "id": "ast_01hx9k2m3n4p5q6r7s8t9u0v",
+      "organization_id": "org_01hx9k2m3n4p5q6r7s8t9u0v",
+      "domain_id": "dom_01hx9k2m3n4p5q6r7s8t9u0v",
+      "category_id": "cat_01hx9k2m3n4p5q6r7s8",
+      "url": "https://acme.com/products/widget-pro",
+      "title": "Widget Pro — Acme Corp",
+      "citation_count": 142,
+      "last_cited_at": "2024-11-10T08:45:00Z",
+      "created_at": "2024-01-20T10:00:00Z"
+    },
+    {
+      "id": "ast_01hx9k2m3n4p5q6r7s8t9u0w",
+      "organization_id": "org_01hx9k2m3n4p5q6r7s8t9u0v",
+      "domain_id": "dom_01hx9k2m3n4p5q6r7s8t9u0v",
+      "category_id": null,
+      "url": "https://acme.com/about",
+      "title": "About Us — Acme Corp",
+      "citation_count": 37,
+      "last_cited_at": "2024-11-08T14:20:00Z",
+      "created_at": "2024-01-20T10:00:00Z"
+    }
+  ],
+  "pagination": {
+    "next_cursor": "eyJpZCI6ImFzdF8wMSJ9",
+    "has_more": true,
+    "total": 284
+  }
+}
+```
+
+<Tip>
+  Use `category_id` filtering when building content-optimization workflows. Pulling assets by category lets you correlate citation frequency with specific product lines and prioritize which pages to update first.
+</Tip>

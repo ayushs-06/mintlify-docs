@@ -1,0 +1,203 @@
+---
+title: "Referrals Report — AI-Driven Traffic to Your Website"
+sidebarTitle: "Referrals"
+description: "Pull referral reports showing AI-driven traffic and click patterns from AI assistants to your website. Available in v1 and v2 formats."
+---
+
+The Referrals Report tracks how much traffic AI assistants send to your website — showing click-through patterns, referral counts by bot, and the prompts or topics that drive the most AI-sourced visits. Use it to correlate AI visibility improvements with actual site traffic and measure the downstream revenue impact of your AI marketing efforts.
+
+Profound provides two versions. **v1** (`getReferralsReport`) returns the standard referrals dataset. **v2** (`getReferralsReportV2`) includes richer segmentation and source attribution fields.
+
+## Request Parameters
+
+<ParamField query="start_date" type="string" required>
+  The start of the reporting window in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="end_date" type="string" required>
+  The end of the reporting window in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField query="bot_name" type="string">
+  Filter to a specific AI bot referral source (e.g., `"chatgpt"`, `"perplexity"`).
+</ParamField>
+
+<ParamField query="model_id" type="string">
+  Filter by a specific model version.
+</ParamField>
+
+<ParamField query="region_id" type="string">
+  Restrict results to a specific geographic region.
+</ParamField>
+
+<ParamField query="category_id" type="string">
+  Scope results to a single prompt category.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Filter by user persona.
+</ParamField>
+
+<ParamField query="prompt_type" type="string">
+  Limit to a specific prompt type such as `"commercial"` or `"navigational"`.
+</ParamField>
+
+<ParamField query="tag_id" type="string">
+  Filter by a tag applied to your tracked prompts or assets.
+</ParamField>
+
+<ParamField query="topic_id" type="string">
+  Narrow results to a specific topic.
+</ParamField>
+
+<ParamField query="asset_id" type="string">
+  Filter referral data to a specific tracked content asset or landing page.
+</ParamField>
+
+<Tip>
+  Referral data works best when your web analytics are connected to Profound. Visit your integration settings to link Google Analytics or a custom UTM tracking setup for higher fidelity referral attribution.
+</Tip>
+
+## Code Examples
+
+### v1 Report
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v1/reports/referrals?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.getReferralsReport({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.get_referrals_report(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+### v2 Report
+
+<CodeGroup>
+
+```bash curl
+curl --request GET \
+  --url "https://api.profound.ai/v2/reports/referrals?start_date=2025-01-01&end_date=2025-01-31" \
+  --header "Authorization: Bearer $PROFOUND_API_KEY"
+```
+
+```typescript TypeScript
+import { ProfoundClient } from "@profoundai/client";
+
+const client = new ProfoundClient({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.getReferralsReportV2({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot_name: "perplexity",
+});
+
+console.log(report);
+```
+
+```python Python
+import os
+from profound import ProfoundClient
+
+client = ProfoundClient(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.get_referrals_report_v2(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot_name="perplexity",
+)
+
+print(report)
+```
+
+</CodeGroup>
+
+## Response Fields
+
+<ResponseField name="data" type="array">
+  List of referral records aggregated by date and optional filter dimensions.
+
+  <Expandable title="data[]">
+    <ResponseField name="date" type="string">
+      The date of this referral data point in `YYYY-MM-DD` format.
+    </ResponseField>
+
+    <ResponseField name="referral_count" type="integer">
+      Total number of referral clicks to your site from AI assistant links on this date.
+    </ResponseField>
+
+    <ResponseField name="bot_name" type="string">
+      The AI assistant that generated the referring link.
+    </ResponseField>
+
+    <ResponseField name="landing_url" type="string">
+      The destination URL on your site that received the referral traffic.
+    </ResponseField>
+
+    <ResponseField name="asset_id" type="string">
+      The Profound asset ID for the landing page, if tracked.
+    </ResponseField>
+
+    <ResponseField name="region_id" type="string">
+      Geographic region of the referral, if available.
+    </ResponseField>
+
+    <ResponseField name="source_attribution" type="string">
+      The originating prompt type or topic driving the referral. Available in v2 only.
+    </ResponseField>
+
+    <ResponseField name="session_count" type="integer">
+      Estimated number of site sessions attributed to AI referrals on this date. Available in v2 only.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Metadata describing the query scope.
+
+  <Expandable title="meta">
+    <ResponseField name="start_date" type="string">
+      The start date used for this report.
+    </ResponseField>
+
+    <ResponseField name="end_date" type="string">
+      The end date used for this report.
+    </ResponseField>
+
+    <ResponseField name="total_referrals" type="integer">
+      Aggregate referral click count across the full reporting window.
+    </ResponseField>
+
+    <ResponseField name="version" type="string">
+      Report schema version — `"v1"` or `"v2"`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

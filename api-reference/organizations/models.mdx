@@ -1,0 +1,139 @@
+---
+title: "List Tracked AI Models — Profound REST API Reference"
+sidebarTitle: "Models"
+description: "GET /organizations/models — Returns the AI models and assistants tracked by Profound for your organization, such as ChatGPT and Perplexity."
+---
+
+AI models are the assistants that Profound queries when running your prompts. Each model represents a distinct AI product — such as ChatGPT, Perplexity, Google AI Overviews, or Claude — and Profound tracks visibility, citations, and sentiment separately per model so you can compare your brand's presence across the AI landscape. This endpoint returns all models enabled for your organization.
+
+## Endpoint
+
+```
+GET https://api.tryprofound.com/v1/organizations/models
+```
+
+## Query parameters
+
+This endpoint accepts no query parameters. The response reflects the full set of AI models Profound tracks for your account.
+
+<Note>
+  The list of available models is managed at the platform level. Contact [support@tryprofound.com](mailto:support@tryprofound.com) if you need a model added to your tracking configuration.
+</Note>
+
+## Code examples
+
+<CodeGroup>
+```bash curl
+curl https://api.tryprofound.com/v1/organizations/models \
+  -H "Authorization: Bearer <PROFOUND_API_KEY>"
+```
+
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({
+  apiKey: process.env.PROFOUND_API_KEY,
+});
+
+const response = await client.organizations.models();
+
+for (const model of response.models) {
+  console.log(model.name, model.provider);
+}
+```
+
+```python Python
+import profound
+
+client = profound.Profound(api_key="<PROFOUND_API_KEY>")
+
+response = client.organizations.models()
+for model in response.models:
+    print(model.name, model.provider)
+```
+</CodeGroup>
+
+## Response
+
+A successful request returns `200 OK` and an `OrganizationModelsResponse` object.
+
+<ResponseField name="models" type="array">
+  An array of AI model objects tracked by your organization.
+
+  <Expandable title="Model fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the model record. Use this value to filter report endpoints by a specific AI assistant.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      The display name of the AI assistant (e.g. `"ChatGPT"`, `"Perplexity"`, `"Google AI Overviews"`).
+    </ResponseField>
+
+    <ResponseField name="provider" type="string">
+      The company that operates the model (e.g. `"OpenAI"`, `"Perplexity AI"`, `"Google"`).
+    </ResponseField>
+
+    <ResponseField name="slug" type="string">
+      A URL-safe identifier for the model (e.g. `"chatgpt"`, `"perplexity"`, `"google-ai-overviews"`).
+    </ResponseField>
+
+    <ResponseField name="description" type="string | null">
+      A brief description of the model's characteristics relevant to AI visibility tracking.
+    </ResponseField>
+
+    <ResponseField name="is_active" type="boolean">
+      `true` if Profound is currently running prompts against this model for your organization. `false` if the model has been paused or deprecated.
+    </ResponseField>
+
+    <ResponseField name="supports_citations" type="boolean">
+      `true` if this model produces citation-style source links that Profound can parse for URL-level attribution.
+    </ResponseField>
+
+    <ResponseField name="supports_sentiment" type="boolean">
+      `true` if sentiment analysis is available for responses from this model.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "models": [
+    {
+      "id": "mdl_01hx9k2m3n4p5q6r7s8t9u0a",
+      "name": "ChatGPT",
+      "provider": "OpenAI",
+      "slug": "chatgpt",
+      "description": "OpenAI's conversational AI assistant, widely used for research and product discovery.",
+      "is_active": true,
+      "supports_citations": false,
+      "supports_sentiment": true
+    },
+    {
+      "id": "mdl_01hx9k2m3n4p5q6r7s8t9u0b",
+      "name": "Perplexity",
+      "provider": "Perplexity AI",
+      "slug": "perplexity",
+      "description": "A search-focused AI assistant that surfaces cited sources alongside every answer.",
+      "is_active": true,
+      "supports_citations": true,
+      "supports_sentiment": true
+    },
+    {
+      "id": "mdl_01hx9k2m3n4p5q6r7s8t9u0c",
+      "name": "Google AI Overviews",
+      "provider": "Google",
+      "slug": "google-ai-overviews",
+      "description": "Google's AI-generated summaries that appear above traditional search results.",
+      "is_active": true,
+      "supports_citations": true,
+      "supports_sentiment": true
+    }
+  ]
+}
+```
+
+<Tip>
+  Use `supports_citations: true` to identify which models surface linkable sources. For citation-rate analysis in your reports, filtering to these models gives you the clearest signal on which of your URLs AI assistants are recommending to users.
+</Tip>

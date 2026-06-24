@@ -1,0 +1,201 @@
+---
+title: "Analyze Which URLs AI Models Cite from Your Website"
+sidebarTitle: "Citation Analysis"
+description: "Use Profound citation reports to discover which pages AI assistants cite most, and identify content gaps where competitors earn citations instead of you."
+---
+
+When an AI assistant answers a question, it sometimes surfaces specific URLs alongside its response. Those citations are high-intent signals: they represent the pages AI models trust enough to recommend directly to users. Profound tracks which of your URLs get cited, how often, and by which AI assistants—so you can double down on what's working and close the gaps where competitors are getting cited instead of you.
+
+## What citations are
+
+A citation occurs when an AI assistant includes a URL from your domain in its response. This is distinct from a brand mention (which drives your [visibility score](/guides/visibility-tracking))—a citation is an explicit link to a specific page.
+
+Citations matter for two reasons:
+
+1. **Direct traffic.** Users who click cited links arrive at your site already primed by the AI's recommendation.
+2. **Content quality signal.** If a page is cited frequently, AI models have learned to trust it. If a page is never cited despite being relevant, it may need structural or content improvements.
+
+<Note>
+  Not all AI assistants return citations in the same format. Profound normalizes citation data across bots so you can compare apples to apples.
+</Note>
+
+## Pull a citation report
+
+Use `client.reports.citations()` to fetch citation data for a date range. The response includes a list of cited URLs, their citation counts, and the bots that cited them.
+
+<CodeGroup>
+```typescript TypeScript
+import Profound from "@profoundai/client";
+
+const client = new Profound({ apiKey: process.env.PROFOUND_API_KEY });
+
+const report = await client.reports.citations({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+for (const citation of report.citations) {
+  console.log(`${citation.url} — cited ${citation.count} times`);
+}
+```
+
+```python Python
+import os
+from profound import Profound
+
+client = Profound(api_key=os.environ["PROFOUND_API_KEY"])
+
+report = client.reports.citations(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+for citation in report.citations:
+    print(f"{citation.url} — cited {citation.count} times")
+```
+</CodeGroup>
+
+## Filter citation data
+
+Narrow your report to the dimensions you care about. Filtering by bot is particularly useful when you want to understand how a specific AI assistant engages with your content.
+
+| Filter | Description |
+|---|---|
+| `bot` | Limit to a specific AI assistant (e.g., `"perplexity"`, `"chatgpt"`) |
+| `asset` | Scope to a specific asset or URL group you've defined in Profound |
+| `category` | Filter by content or product category |
+| `region` | Narrow to a geographic region |
+| `topic` | Focus on a topic cluster |
+| `tag` | Filter by custom tag |
+| `model_id` | Target a specific model version |
+
+<CodeGroup>
+```typescript TypeScript
+const report = await client.reports.citations({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+  bot: "perplexity",
+  category: "pricing",
+});
+
+console.log("Top cited URL:", report.citations[0]?.url);
+console.log("Citation count:", report.citations[0]?.count);
+```
+
+```python Python
+report = client.reports.citations(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+    bot="perplexity",
+    category="pricing",
+)
+
+top = report.citations[0] if report.citations else None
+if top:
+    print("Top cited URL:", top.url)
+    print("Citation count:", top.count)
+```
+</CodeGroup>
+
+## Identify top-cited and under-cited pages
+
+Sorting your citation results surfaces the pages AI models trust most—and the ones they're ignoring. Use this to prioritize your content roadmap.
+
+<Steps>
+  <Step title="Pull your citation report">
+    Fetch citations for a meaningful date window, at least 30 days, to smooth out day-to-day noise.
+  </Step>
+  <Step title="Sort by citation count">
+    Sort descending to find your top-cited pages. These are your AI-trusted assets—consider linking to them internally and keeping them fresh.
+  </Step>
+  <Step title="Identify gaps">
+    Cross-reference the cited URLs against your full site map. Pages that should be cited (based on their topic relevance) but aren't are your highest-priority optimization targets.
+  </Step>
+  <Step title="Check competitor citations">
+    If Profound is tracking competitors, pull their citation data for the same period and compare. Pages where a competitor outperforms you reveal specific content gaps to close.
+  </Step>
+</Steps>
+
+<Tip>
+  Filter by `category` and sort by count to find the top-cited page in each product area. If one category has dramatically fewer citations than others, that content cluster needs attention.
+</Tip>
+
+<CodeGroup>
+```typescript TypeScript
+const report = await client.reports.citations({
+  start_date: "2025-01-01",
+  end_date: "2025-01-31",
+});
+
+// Sort by citation count, highest first
+const sorted = [...report.citations].sort((a, b) => b.count - a.count);
+
+console.log("Top 5 cited pages:");
+sorted.slice(0, 5).forEach((c, i) => {
+  console.log(`${i + 1}. ${c.url} (${c.count} citations)`);
+});
+
+console.log("\nBottom 5 cited pages:");
+sorted.slice(-5).forEach((c, i) => {
+  console.log(`${i + 1}. ${c.url} (${c.count} citations)`);
+});
+```
+
+```python Python
+report = client.reports.citations(
+    start_date="2025-01-01",
+    end_date="2025-01-31",
+)
+
+sorted_citations = sorted(report.citations, key=lambda c: c.count, reverse=True)
+
+print("Top 5 cited pages:")
+for i, c in enumerate(sorted_citations[:5], 1):
+    print(f"{i}. {c.url} ({c.count} citations)")
+
+print("\nBottom 5 cited pages:")
+for i, c in enumerate(sorted_citations[-5:], 1):
+    print(f"{i}. {c.url} ({c.count} citations)")
+```
+</CodeGroup>
+
+## Stream citation results
+
+For large datasets—long date ranges or high-volume domains—use `client.reports.streamCitations()` to process citation data as it arrives rather than waiting for the full payload.
+
+<CodeGroup>
+```typescript TypeScript
+const stream = await client.reports.streamCitations({
+  start_date: "2025-01-01",
+  end_date: "2025-03-31",
+  bot: "chatgpt",
+});
+
+for await (const chunk of stream) {
+  console.log("Chunk received:", chunk);
+}
+```
+
+```python Python
+stream = client.reports.stream_citations(
+    start_date="2025-01-01",
+    end_date="2025-03-31",
+    bot="chatgpt",
+)
+
+for chunk in stream:
+    print("Chunk received:", chunk)
+```
+</CodeGroup>
+
+<Warning>
+  Streaming responses are paginated internally. Don't assume the first chunk contains all citations—iterate through the full stream before drawing conclusions from the data.
+</Warning>
+
+## Next steps
+
+Citation data tells you which pages are working. To understand why, and to fix the ones that aren't:
+
+- [Optimize underperforming pages](/guides/content-optimization) using Profound's per-asset optimization suggestions
+- [Check sentiment on cited pages](/guides/sentiment-reporting) to confirm AI models are describing them positively
+- [Track overall visibility trends](/guides/visibility-tracking) to see how citation improvements affect your broader AI presence
